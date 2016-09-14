@@ -20,6 +20,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fColaCos;	
 
 	float fpChannelResp[CHANNEL];
+	float fDrive;
 
 	int ipAcquCh[CHANNEL];
 	int iAcquChLen;
@@ -27,6 +28,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fpNoiseLevel[CHANNEL];
 	float fMaxNoise;
 	int iNoiseResult;
+	
+	int iLoopResult;
+	float fLoopCheckFreq;
+	float fLoopCheckLevel;
+	float fLoopCheckLimit;
 
 	float fFreqRate;
 	float iSweepDitect;
@@ -104,7 +110,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				fSumX2[ipAcquCh[i]] = 0;
 				fSumX[ipAcquCh[i]] = 0;
 				fpNoiseLevel[ipAcquCh[i]] = fpChannelResp[ipAcquCh[i]];
-				iNoiseResult |= ((fpChannelResp[ipAcquCh[i]]>fMaxNoise) << (ipAcquCh[i]));
+				iNoiseResult |= ((fpChannelResp[ipAcquCh[i]]>fMaxNoise) << ipAcquCh[i]);
 			}
 
 			if (iNoiseResult > 0)
@@ -141,6 +147,10 @@ int _tmain(int argc, _TCHAR* argv[])
 				iScheduleAdd += iGetEnd;																//达到目标，计划表地址+1；未达到，+0
 
 
+
+				fFreq = fLoopCheckFreq;
+				
+
 				
 				fPhase += fFreq / SAMPINGRATE;
 				iZeroPass = (fPhase > 1);
@@ -176,6 +186,8 @@ int _tmain(int argc, _TCHAR* argv[])
 					fSumX2[ipAcquCh[i]] += fpData[ipAcquCh[i]] * fpData[ipAcquCh[i]];
 				}
 
+
+
 				if (iRefresh == 1){
 					F_CycleLen = SampleNums - PreSampleNums;
 					PreSampleNums = SampleNums;
@@ -184,9 +196,16 @@ int _tmain(int argc, _TCHAR* argv[])
 						fpChannelResp[ipAcquCh[i]]= sqrtf((fSumX2[ipAcquCh[i]] - fSumX[ipAcquCh[i]] * fSumX[ipAcquCh[i]] / F_CycleLen) / F_CycleLen * 2);
 						fSumX2[ipAcquCh[i]] = 0;
 						fSumX[ipAcquCh[i]] = 0;
+						iLoopResult |= ((fpChannelResp[ipAcquCh[i]]>fLoopCheckLevel) << ipAcquCh[i]);
 					}
 				}
 
+				if (iLoopResult > 0)
+				{
+					if fLoopCheckLimit
+				}
+
+				
 
 
 
