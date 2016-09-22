@@ -134,7 +134,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int   iLimitEnable;
 
 
-	while (SInputCmd.iExit != 0)
+	while (SBufCmd.iExit != 0)
 	{
 		switch (iTestCase)
 		{
@@ -147,8 +147,176 @@ int _tmain(int argc, _TCHAR* argv[])
 			break;
 
 		case 1:                                             //进行初始化
-			fMaxNoise = SInitPara.fNoiseThreshold;
+
+
+			for (i = 0; i < CHANNEL; i++)
+			{
+				fpData[CHANNEL] = 0.0f;
+			}
+			fDriveSignal = 0.0f;
+			llPreSampleNums = 0;
+			llSampleNums = 0;
+
+			fFreq = fLoopCheckFreq;
+			fPhase = 0.0f;
+			fColaSin = 0.0f;
+			fColaCos = 1.0f;
+
+			fDrive = 0.0f;
+
+			iAcquChLen = 0;
+			iCtrLen = 0;
+			iCalLen = 0;
+			for (i = 0; i < CHANNEL; i++)
+			{
+				if (SInputPara.ipChannelType[i] == 1)
+				{
+					ipAcquCh[iAcquChLen] = i;
+					iAcquChLen++;
+				}
+				else if (SInputPara.ipChannelType[i] == 2)
+				{
+					ipAcquCh[iAcquChLen] = i;
+					iAcquChLen++;
+				}
+				else if (SInputPara.ipChannelType[i] == 3)
+				{
+					ipAcquCh[iAcquChLen] = i;
+					iAcquChLen++;
+					ipCtrCh[iCtrLen] = i;
+					iCtrLen++;
+					ipCalCh[iCalLen] = i;
+					iCalLen++;
+				}
+				ipCalCh[iCalLen] = CHANNEL;
+				iCalLen++;
+
+			}
+
+			for (i = 0; i < CHANNEL; i++)
+			{
+				fpNoiseLevel[i] = 0.0f;
+			}
+
+			fMaxNoise = SInputPara.fNoiseThreshold;
+			iNoiseResult = 0;
+			iLoopResult = 0;
+			fLoopCheckFreq = SInputPara.fLoopCheckFreq;
+			fLoopCheckLevel = SInputPara.fLoopCheckLevel;
+			fLoopCheckLimit=SInputPara.fLoopCheckLimit;
+			iLoopStop = 0;
+
+			fInitialLevel=SInputPara.fInitialLevel;
+
+			fFreqRate = 0;
+			iSweepDirect = 1;
+
+			iScheduleAdd = 0;
+			for (i = 0; i < 100; i++)
+			{
+				fpFreqGoal1[i] = SInputPara.fppScheTable[i][0];
+				fpFreqGoal2[i] = SInputPara.fppScheTable[i][1];
+				fpScheduleRate[i] = SInputPara.fppScheTable[i][2];
+				llpTimeGoal[i] = SInputPara.fppScheTable[i][3];
+				llpDwellTime[i] = SInputPara.fppScheTable[i][4];
+				iAddMove[i] == SInputPara.fppScheTable[i][5];
+			}
+			iGetEnd = 0;
+			iGetEnd1 = 0;
+			iGetEnd2 = 0;
+			iGetEnd3 = 0;;
+
+			fTempPhase = 0;
+			iZeroPass = 0;
+			iRefresh = 0;;
+			iCtrCycles=0;
+			iPassTimes = 0;
 			
+			fLowFreq = SInputPara.fLowRadioFreq;
+			fHighFreq = SInputPara.fHighRadioFreq;
+			fLowTime = SInputPara.fLowRadioFreq;
+			fHighTime=SInputPara.fHighRadioTime;
+			iMidCycles = SInputPara.fMidRadioCycles;
+
+			fCtrRadio = 1;
+
+			fLen = 0;
+			fFourLen = 0;
+			fCompLen = 1;
+			fPreCompLen = 0;
+
+			for (i = 0; i < CHANNEL; i++)
+			{
+				fpDataRe[i] = 0;
+				fpDataIm[i] = 0;
+				fpCompAreaRe[i] = 0;
+				fpCompAreaIm[i] = 0;
+				fpCompDataRe[i] = 0;
+				fpCompDataIm[i] = 0;
+				fpRespRe[i] = 0;
+				fpRespIm[i] = 0;
+
+				fpSumRe[i] = 0;
+				fpSumIm[i] = 0;
+				fpPreDataRe[i] = 0;
+				fpPreDataIm[i] = 0;
+				fpLastDataRe[i] = 0;
+				fpLastDataIm[i] = 0;
+				fpPreCompAreaRe[i] = 0;
+				fpPreCompAreaIm[i] = 0;
+
+				fSumX[i] = 0;
+				fSumX2[i] = 0;
+
+				fpMaxX[i] = 0;
+				fpMinX[i] = 0;
+
+				fpChannelResp[i] = 0;
+				fpFourPhase[i] = 0;
+				fpRecogResp[CHANNEL * 2 + i] = 0;
+				fpRecogResp[CHANNEL + i] = 0;
+				fpRecogResp[i] = 0;
+				ipRecongMode[i]=SInputPara.ipRecogMode[i];
+			}
+			fpChannelResp[CHANNEL] = 0;
+
+
+			fpWeightResp[0] = 0;
+			fpWeightResp[1] = 0;
+			fpWeightResp[2] = 10000;
+			iWeightMode = SInputPara.iWeightMode;
+			fWeightSum = 0;
+			for (i = 0; i < CHANNEL; i++)
+			{
+				fpChannelWeight[i]=SInputPara.fpWeighting[i];
+				fWeightSum += fpChannelWeight[i];
+			}
+				
+
+			fReferGain = 0.03f;
+			fReferGainGoal = 1;
+			LevelRate(&fLevelupRate, &fLevelupOffset, SInputPara.fLevelupRate, SInputPara.fLowRadioTime, SInputPara.fHighRadioTime);
+			LevelRate(&fLeveldownRate, &fLeveldownOffset, SInputPara.fLeveldownRate, SInputPara.fLowRadioTime, SInputPara.fHighRadioTime);
+		
+			float fLevelRate = 1;
+			float fLevelOffset = 0;
+			int   iLevelChanging = 0;
+			float fTempGain = NOTZERO;
+			float fCycletime = 1;
+		
+			float fppReferFreq[CHANNEL+1][2048];
+			float fppReferAmp[CHANNEL+1][2048];
+			int   ipReferType[CHANNEL + 1];
+			int   ipFreqMark[CHANNEL + 1];
+			float fpChannelRefer[CHANNEL + 1];
+
+			float fCalDrive[CHANNEL + 1];
+			float fFilterDrive[CHANNEL + 1];
+			float fChannelResp[CHANNEL + 1];
+			float fPreCalDrive[CHANNEL + 1];
+			int   iEffectCh;
+			int   iLimitEnable;
+			int iTestCase;
 			break;
 
 		case 2:												//时域数据预览
@@ -199,7 +367,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 4:
 			fDriveSignal = NOTZERO;
 			iLoopStop = 0;
-			fDrive = 0.03f*fInitialLevel;
+			fDrive = 0.0001;
 
 			while (iTestCase == 4)
 			{
@@ -253,30 +421,24 @@ int _tmain(int argc, _TCHAR* argv[])
 						fpChannelResp[ipAcquCh[i]] = sqrtf((fSumX2[ipAcquCh[i]] - fSumX[ipAcquCh[i]] * fSumX[ipAcquCh[i]] / fLen) / fLen * 2);
 						fSumX2[ipAcquCh[i]] = 0;
 						fSumX[ipAcquCh[i]] = 0;
-						iLoopResult |= ((fpChannelResp[ipAcquCh[i]]<fLoopCheckLevel) << ipAcquCh[i]);
+						iLoopResult |= ((fpChannelResp[ipAcquCh[i]] < fLoopCheckLevel) << ipAcquCh[i]);
 					}
 
-					if (iLoopStop == 0)
+					if (iLoopResult > 0)
 					{
-						if (iLoopResult > 0)
+						if (fDrive > fLoopCheckLimit)
 						{
-							if (fDrive > fLoopCheckLimit)
-							{
-								iLoopStop = 1;
-								fDrive *= 0.707f;
-							}
-							else fDrive *= 1.5;
+							iTestCase = 7;
 						}
-						else if (SPretestPara.iPretestType == 2)
-						{
-							iTestCase = 5;
-						}
-						else iTestCase = 6;
+						else fDrive *= 1.5;
 					}
-					else if (fDrive <= fInitialLevel)
-						iTestCase = 7;
-					else fDrive *= 0.707f;
+					else if (SPretestPara.iPretestType == 2)
+					{
+						iTestCase = 5;
+					}
+					else iTestCase = 6;
 				}
+
 			}
 
 			break;
@@ -517,3 +679,12 @@ void AlarmAbort(int *flag, int *Result, float *Resp, float Refer, float Highbox,
 	*flag = *Result > 0;																//结果大于0有通道控制信号超限
 }*/
 
+void LevelRata(float *fRate, float *fOffset,float RealRate, float LowT, float HighT)
+{
+	float LowRate;
+	float HighRate;
+	LowRate = powf(10, RealRate* LowT / 20.0f);
+	HighRate = powf(10, RealRate* HighT / 20.0f);
+	*fRate = (LowRate - HighRate) / (LowT - HighT);
+	*fOffset = 0.975f*HighRate;
+}

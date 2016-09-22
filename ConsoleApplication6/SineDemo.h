@@ -54,28 +54,28 @@ PretestPara SPretestPara;
 
 typedef struct ProfilePara
 {
-	float fppProfileTable[101][10];
-	int iProfileType;
-	float fpUnitType[3];
+	float fppProfileTable[8][101][10];
+	int iProfileType[8];
+	float fpUnitType[8][3];
 }ProfilePara;
-ProfilePara SProfilePara[8];
+ProfilePara SProfilePara;
 
 typedef struct ChannelPara
 {
-	int iChannelType;
-	int iChannelCheck;
-	int iRecogMode;
-	float fWeighting;
-	int iSenserType;
-	int iCouplingType;
-	float fSensitivity;
-	float fSenserUnit;
-	float fSenserRange;
-	int iChannelAbort;
-	float fChannellimit;
-	int iProfileType;
+	int ipChannelType[CHANNEL];
+	int ipChannelCheck[CHANNEL];
+	int ipRecogMode[CHANNEL];
+	float fpWeighting[CHANNEL];
+	int ipSenserType[CHANNEL];
+	int ipCouplingType[CHANNEL];
+	float fpSensitivity[CHANNEL];
+	float fpSenserUnit[CHANNEL];
+	float fpSenserRange[CHANNEL];
+	int ipChannelAbort[CHANNEL];
+	float fpChannellimit[CHANNEL];
+	int ipProfileType[CHANNEL];
 }ChannelPara;
-ChannelPara SChannelPara[8];
+ChannelPara SChannelPara;
 
 typedef struct SaftyPara
 {
@@ -109,19 +109,130 @@ typedef struct SchedulePara
 }SchedulePara;
 SchedulePara SSchedulePara;
 
+typedef struct InputPara
+{
+	int iTestMode;
+	int iTestSweeps;
+	float fTestTime;
+	int iTestCycles;
+	float fSweepRate;
+	float fSweepTime;
+	float fMaxFreq;
+	float fMinFreq;
+	float fInitialLevel;
+	int iRunMode;
+	int iStartDirect;
+	int iDriveFix;
+	float fpTheoryTrans[2048];
+	int iWeightMode;
+	float fLowRadioFreq;
+	float fHighRadioFreq;
+	float fLowRadioTime;
+	float fHighRadioTime;
+	int fMidRadioCycles;
+	int iPretestType;
+	int iSignalType;
+	float fpPretestTableAmp[100];
+	float fpPretestTableFreq[100];
+	float fNoiseThreshold;
+	float fLoopCheckFreq;
+	float fLoopCheckLevel;
+	float fLoopCheckLimit;
+	float fPretestInitLevel;
+	int iFreqLine;
+	int iAvgTimes;
+	int iStopButtonCheck;
+	int iGainCheck;
+	float fLinerity;
+	int CohCheck;
+	float MinCohLevel;
+	float fpppProfileTable[8][101][10];
+	int ipProfileType[8];
+	float fppUnitType[8][3];
+	int ipChannelType[CHANNEL];
+	int ipChannelCheck[CHANNEL];
+	int ipRecogMode[CHANNEL];
+	float fpWeighting[CHANNEL];
+	int ipSenserType[CHANNEL];
+	int ipCouplingType[CHANNEL];
+	float fpSensitivity[CHANNEL];
+	float fpSenserUnit[CHANNEL];
+	float fpSenserRange[CHANNEL];
+	int ipChannelAbort[CHANNEL];
+	float fpChannellimit[CHANNEL];
+	int ipProfileType[CHANNEL];
+	float fEqualRate;
+	float fStopRate;
+	float fLevelupRate;
+	float fLeveldownRate;
+	float fMaxDrive;
+	float fSystemGain;
+	float fCSLLevel;
+	float fMaxShakerInput;
+	float fMaxShakerD;
+	float fMaxShakerV;
+	float fMaxShakerSineA;
+	float fMaxShakerRandA;
+	float fMaxShakerShockA;
+	float fMaxShakerSineF;
+	float fMaxShakerRandF;
+	float fMaxShakerShockF;
+	float fDUT;
+	float fFixture;
+	float fArmature;
+	float fExpander;
+	float fMisc;
+	float fppScheTable[101][6];
+}InputPara;
+InputPara SInputPara;
 
-typedef struct InputCommand
+typedef struct InputCmd
 {
 	int iExit;
+	int iCmd;
 	int iTestCase;
-}InputCommand;
-InputCommand SInputCmd, SBufCmd;
+	int iScheduleAdd;
+	int iSweepDirect;
+	float fTestlevel;
+	float fSweepRate;
+	float fCtrRadio;
+}InputCmd;
 
+InputCmd SBufCmd;
 typedef struct UpdataPara
 {
-	float fpChannelResp[CHANNEL];
+	int iCmd;
+	int iSweepDirect;
+	float fTestlevel;
+	float fSweepRate;
+	float fCtrRadio;
+	int iTestCase;
+	int iStopReason;
+	int iScheduleAdd;
+	float fChannelNoise;
 	int iNoiseResult;
-	int iTestStep;
+	int iLoopResult;
+	int iAlarmorNot;
+	int iAlarmResult;
+	int iAbortorNot;
+	int iAbortResult;
+	int iCSLorNot;
+	int iCSLResult;
+	int iChannelAbort;
+	int iChannelAbortResult;
+	int iLimitChannelEnable;
 }UpdataPara;
-UpdataPara SUpdataPara;
 
+typedef struct UpdataData
+{
+	float fFreq;
+	float fpFourPhase[8];
+	float fpFourResp[8];
+	float fpRMSResp[8];
+	float fpPeakResp[8];
+	float fCtrRefer;
+	float fCtrResp;
+	float fCtrDrive;
+}UpdataData;
+
+void LevelRate(float *fRate, float *fOffset, float RealRate, float LowT, float HighT);
