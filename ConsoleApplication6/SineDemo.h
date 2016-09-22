@@ -1,11 +1,11 @@
 
-#include "stdafx.h"
+
 #include "math.h"
 
 const float SAMPINGRATE = 200000;
-const float NOTZERO = 0.00001;
+const float NOTZERO = 0.00001f;
 const int CHANNEL = 8;
-const int NOISECHECKTIME = 5 * SAMPINGRATE;
+const int NOISECHECKTIME =(int)(5 * SAMPINGRATE);
 const long long int INF = 10000000000000;
 typedef struct ControlPara
 {
@@ -28,7 +28,7 @@ typedef struct ControlPara
 	float fLowRadioTime;
 	float fHighRadioTime;
 	int fMidRadioCycles;
-};
+}ControlPara;
 ControlPara SControlPara;
 
 typedef struct PretestPara
@@ -49,7 +49,7 @@ typedef struct PretestPara
 	float fLinerity;
 	int CohCheck;
 	float MinCohLevel;
-};
+}PretestPara;
 PretestPara SPretestPara;
 
 typedef struct ProfilePara
@@ -57,7 +57,7 @@ typedef struct ProfilePara
 	float fppProfileTable[101][10];
 	int iProfileType;
 	float fpUnitType[3];
-};
+}ProfilePara;
 ProfilePara SProfilePara[8];
 
 typedef struct ChannelPara
@@ -74,7 +74,7 @@ typedef struct ChannelPara
 	int iChannelAbort;
 	float fChannellimit;
 	int iProfileType;
-};
+}ChannelPara;
 ChannelPara SChannelPara[8];
 
 typedef struct SaftyPara
@@ -100,32 +100,15 @@ typedef struct SaftyPara
 	float fArmature;
 	float fExpander;
 	float fMisc;
-};
+}SaftyPara;
 SaftyPara SSaftyPara;
 
 typedef struct SchedulePara
 {
 	float fppScheTable[101][6];
-};
+}SchedulePara;
 SchedulePara SSchedulePara;
 
-
-typedef struct InitPara
-{
-	float fNoiseThreshold;
-	float fLoopCheckFreq;
-	float fLowRadioFreq;
-	float fHighRadioFreq;
-	float fLowRadioTime;
-	float fHighRadioTime;
-	int fMidRadioCycles;
-	float fpSinTable[2048];
-	int ipAcquCh[CHANNEL];
-	int iAcquChLen;
-	float fppScheTable[101][6];
-	int iScheLength;
-};
-InitPara SInitPara;
 
 typedef struct InputCommand
 {
@@ -139,30 +122,6 @@ typedef struct UpdataPara
 	float fpChannelResp[CHANNEL];
 	int iNoiseResult;
 	int iTestStep;
-};
+}UpdataPara;
 UpdataPara SUpdataPara;
 
-typedef struct RunPara
-{
-	float fpData[CHANNEL];
-	float fpNoiseLevel[CHANNEL];
-	float fDriveSignal;
-	float fFreq;
-	float fPhase;
-	float fColaSin;
-	float fColaCos;
-	int iZeroPass;
-	int iRefresh;
-	long long int llDwellTime;
-	int iScheduleAdd;
-
-}RunPara;
-
-
-void InitRunPara();
-void PreviewCase();
-void NoiseCheck();
-void LoopCheck();
-void TransferRecg();
-void FormalTest();
-void IdleCase();
