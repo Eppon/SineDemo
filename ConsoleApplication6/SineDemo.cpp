@@ -120,8 +120,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fTempGain;
 	float fCycletime;
 
-	float fppReferFreq[CHANNEL][2048];
-	float fppReferAmp[CHANNEL][2048];
+	float fppReferFreq[CHANNEL][TABLELEN];
+	float fppReferAmp[CHANNEL][TABLELEN];
 	int   ipReferType[CHANNEL + 1];
 	int   ipFreqMark[CHANNEL + 1];
 	float fpChannelRefer[CHANNEL + 1];
@@ -280,7 +280,6 @@ int _tmain(int argc, _TCHAR* argv[])
 			}
 			fpChannelResp[CHANNEL] = 0;
 
-
 			fpWeightResp[0] = 0;
 			fpWeightResp[1] = 0;
 			fpWeightResp[2] = 10000;
@@ -292,20 +291,21 @@ int _tmain(int argc, _TCHAR* argv[])
 				fWeightSum += fpChannelWeight[i];
 			}
 				
-
 			fReferGain = 0.03f;
 			fReferGainGoal = 1;
 			LevelRate(&fLevelupRate, &fLevelupOffset, SInputPara.fLevelupRate, SInputPara.fLowRadioTime, SInputPara.fHighRadioTime);
 			LevelRate(&fLeveldownRate, &fLeveldownOffset, SInputPara.fLeveldownRate, SInputPara.fLowRadioTime, SInputPara.fHighRadioTime);
 		
-			float fLevelRate = 1;
-			float fLevelOffset = 0;
-			int   iLevelChanging = 0;
-			float fTempGain = NOTZERO;
-			float fCycletime = 1;
+			fLevelRate = 1;
+			fLevelOffset = 0;
+			iLevelChanging = 0;
+			fTempGain = NOTZERO;
+			fCycletime = 1;
 		
-			float fppReferFreq[CHANNEL+1][2048];
-			float fppReferAmp[CHANNEL+1][2048];
+				
+			float fppReferFreq[CHANNEL+1][TABLELEN];
+			float fppReferAmp[CHANNEL+1][TABLELEN];
+
 			int   ipReferType[CHANNEL + 1];
 			int   ipFreqMark[CHANNEL + 1];
 			float fpChannelRefer[CHANNEL + 1];
@@ -570,7 +570,6 @@ int _tmain(int argc, _TCHAR* argv[])
 							
 							fpChannelRefer[ipCalCh[i]] *= fReferGain;
 
-
 							fCalDrive[ipCalCh[i]] = fDrive / fChannelResp[ipCalCh[i]] * fpChannelRefer[ipCalCh[i]];
 							fCalDrive[ipCalCh[i]] = (fCalDrive[ipCalCh[i]]>NOTZERO ? fCalDrive[ipCalCh[i]] : NOTZERO);
 							fFilterDrive[ipCalCh[i]] = sqrtf(fCalDrive[ipCalCh[i]] * fPreCalDrive[ipCalCh[i]]);
@@ -687,4 +686,29 @@ void LevelRata(float *fRate, float *fOffset,float RealRate, float LowT, float Hi
 	HighRate = powf(10, RealRate* HighT / 20.0f);
 	*fRate = (LowRate - HighRate) / (LowT - HighT);
 	*fOffset = 0.975f*HighRate;
+}
+
+void InterpPoints(float *fY, float *fX, float *fx, float *fy, int iXLenth, int ixLenth)
+{
+	int i;
+	float fdx;
+	int ixAdd;
+
+	fdx = (fx[ixLenth] - fx[0]) / (iXLenth - 3);
+	fX[0] = 0.5f * fx[0];
+	fY[0] = fY[0];
+	fX[iXLenth] = 1.1f * fx[ixLenth];
+	fY[iXLenth] = fY[ixLenth];
+	fX[1] = fx[0];
+	fY[1] = fY[0];
+	ixAdd = 1;
+	for (i = 0; i < iXLenth; i++)
+	{
+		while ((*fX) > fx[ixAdd])
+		{
+			ixAdd++;
+		}
+
+		*fY = (*fX - fx[ixAdd - 1])*(fx[ixAdd] - fx[ixAdd - 1]) / (fy[ixAdd] - fy[ixAdd - 1]);
+	}
 }

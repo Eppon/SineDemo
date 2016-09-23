@@ -6,6 +6,7 @@ const float SAMPINGRATE = 200000;
 const float NOTZERO = 0.00001f;
 const int CHANNEL = 8;
 const int NOISECHECKTIME =(int)(5 * SAMPINGRATE);
+const int TABLELEN = 2048;
 const long long int INF = 10000000000000;
 typedef struct ControlPara
 {
