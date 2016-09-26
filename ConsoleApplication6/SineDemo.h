@@ -55,7 +55,16 @@ PretestPara SPretestPara;
 
 typedef struct ProfilePara
 {
-	float fppProfileTable[8][101][10];
+	float fppTableFreq[8][101];
+	float fppTableAcc[8][101];
+	float fppTableVel[8][101];
+	float fppTableDesp[8][101];
+	float fppTableLeftSlp[8][101];
+	float fppTableRightSlp[8][101];
+	float fppTableLowAlm[8][101];
+	float fppTableHighAlm[8][101];
+	float fppTableLowAbt[8][101];
+	float fppTableHighAbt[8][101];
 	int iProfileType[8];
 	float fpUnitType[8][3];
 }ProfilePara;
@@ -147,7 +156,16 @@ typedef struct InputPara
 	float fLinerity;
 	int CohCheck;
 	float MinCohLevel;
-	float fpppProfileTable[8][101][10];
+	float fppTableFreq[8][101];
+	float fppTableAcc[8][101];
+	float fppTableVel[8][101];
+	float fppTableDesp[8][101];
+	float fppTableLeftSlp[8][101];
+	float fppTableRightSlp[8][101];
+	float fppTableLowAlm[8][101];
+	float fppTableHighAlm[8][101];
+	float fppTableLowAbt[8][101];
+	float fppTableHighAbt[8][101];
 	int ipProfileType[8];
 	float fppUnitType[8][3];
 	int ipChannelType[CHANNEL];
@@ -161,7 +179,7 @@ typedef struct InputPara
 	float fpSenserRange[CHANNEL];
 	int ipChannelAbort[CHANNEL];
 	float fpChannellimit[CHANNEL];
-	int ipProfileType[CHANNEL];
+	int ipReferType[CHANNEL];
 	float fEqualRate;
 	float fStopRate;
 	float fLevelupRate;
@@ -199,7 +217,16 @@ typedef struct InputCmd
 	float fCtrRadio;
 }InputCmd;
 
-InputCmd SBufCmd;
+InputCmd SBufCmd = {
+	0,
+	0,
+	0,
+	0,
+	1,
+	0.03f,
+	0.0f,
+	1.0f
+};
 typedef struct UpdataPara
 {
 	int iCmd;
@@ -237,3 +264,4 @@ typedef struct UpdataData
 }UpdataData;
 
 void LevelRate(float *fRate, float *fOffset, float RealRate, float LowT, float HighT);
+void InterpPoints(float *ifX, float *ifY, float *ifx, float *ify, int iXLenth, int ixLenth);

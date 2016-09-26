@@ -8,7 +8,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	int j;
 	int i;
-	int iTestCase;
+	int iTestCase = 1;
 
 	float fpData[CHANNEL];
 	float fDriveSignal;
@@ -134,7 +134,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int   iLimitEnable;
 
 
-	while (SBufCmd.iExit != 0)
+	while (SBufCmd.iExit = 0)
 	{
 		switch (iTestCase)
 		{
@@ -153,16 +153,6 @@ int _tmain(int argc, _TCHAR* argv[])
 			{
 				fpData[CHANNEL] = 0.0f;
 			}
-			fDriveSignal = 0.0f;
-			llPreSampleNums = 0;
-			llSampleNums = 0;
-
-			fFreq = fLoopCheckFreq;
-			fPhase = 0.0f;
-			fColaSin = 0.0f;
-			fColaCos = 1.0f;
-
-			fDrive = 0.0f;
 
 			iAcquChLen = 0;
 			iCtrLen = 0;
@@ -188,10 +178,9 @@ int _tmain(int argc, _TCHAR* argv[])
 					ipCalCh[iCalLen] = i;
 					iCalLen++;
 				}
-				ipCalCh[iCalLen] = CHANNEL;
-				iCalLen++;
-
 			}
+			ipCalCh[iCalLen] = CHANNEL;
+			iCalLen++;
 
 			for (i = 0; i < CHANNEL; i++)
 			{
@@ -211,15 +200,26 @@ int _tmain(int argc, _TCHAR* argv[])
 			fFreqRate = 0;
 			iSweepDirect = 1;
 
+			fDriveSignal = 0.0f;
+			llPreSampleNums = 0;
+			llSampleNums = 0;
+
+			fFreq = fLoopCheckFreq;
+			fPhase = 0.0f;
+			fColaSin = 0.0f;
+			fColaCos = 1.0f;
+
+			fDrive = 0.0f;
+
 			iScheduleAdd = 0;
 			for (i = 0; i < 100; i++)
 			{
 				fpFreqGoal1[i] = SInputPara.fppScheTable[i][0];
 				fpFreqGoal2[i] = SInputPara.fppScheTable[i][1];
 				fpScheduleRate[i] = SInputPara.fppScheTable[i][2];
-				llpTimeGoal[i] = SInputPara.fppScheTable[i][3];
+				llpTimeGoal[i] = SInputPara.fppScheTable[i][3]*SAMPINGRATE;
 				llpDwellTime[i] = SInputPara.fppScheTable[i][4];
-				iAddMove[i] == SInputPara.fppScheTable[i][5];
+				iAddMove[i] = SInputPara.fppScheTable[i][5];
 			}
 			iGetEnd = 0;
 			iGetEnd1 = 0;
@@ -295,28 +295,46 @@ int _tmain(int argc, _TCHAR* argv[])
 			fReferGainGoal = 1;
 			LevelRate(&fLevelupRate, &fLevelupOffset, SInputPara.fLevelupRate, SInputPara.fLowRadioTime, SInputPara.fHighRadioTime);
 			LevelRate(&fLeveldownRate, &fLeveldownOffset, SInputPara.fLeveldownRate, SInputPara.fLowRadioTime, SInputPara.fHighRadioTime);
-		
+			
+
 			fLevelRate = 1;
 			fLevelOffset = 0;
 			iLevelChanging = 0;
 			fTempGain = NOTZERO;
 			fCycletime = 1;
-		
+
+			float ipxLenth[CHANNEL];
+			for (i = 0; i < CHANNEL; i++)
+			{
+				j = 0;
+
+				while (SInputPara.fppTableFreq[i][j] < SInputPara.fppTableFreq[i][j + 1])
+				{
+					(ipxLenth[CHANNEL])++;
+				}
+				ipReferType[i] = SInputPara.ipReferType[i];
+			}
+			ipReferType[CHANNEL] = CHANNEL;
+
+			for (i = 0; i < iCalLen; i++)
+			{
+				InterpPoints(fppReferFreq[ipReferType[iCalLen]], fppReferAmp[ipReferType[iCalLen]], SInputPara.fppTableFreq[ipReferType[iCalLen]], SInputPara.fppTableAcc[ipReferType[iCalLen]], TABLELEN, ipxLenth[ipReferType[iCalLen]]);
+			}
+
+			for (i = 0; i < CHANNEL+1; i++)
+			{
 				
-			float fppReferFreq[CHANNEL+1][TABLELEN];
-			float fppReferAmp[CHANNEL+1][TABLELEN];
-
-			int   ipReferType[CHANNEL + 1];
-			int   ipFreqMark[CHANNEL + 1];
-			float fpChannelRefer[CHANNEL + 1];
-
-			float fCalDrive[CHANNEL + 1];
-			float fFilterDrive[CHANNEL + 1];
-			float fChannelResp[CHANNEL + 1];
-			float fPreCalDrive[CHANNEL + 1];
-			int   iEffectCh;
-			int   iLimitEnable;
-			int iTestCase;
+				ipFreqMark[i] = (fpScheduleRate[1]>0) ? 0 : 2048;
+				fpChannelRefer[i]=NOTZERO;
+				fCalDrive[i] = NOTZERO;;
+				fFilterDrive[i] = NOTZERO;;
+				fChannelResp[i] = NOTZERO;;
+				fPreCalDrive[i] = NOTZERO;;
+			}
+			iEffectCh = CHANNEL;
+			iLimitEnable = 0;
+			//send
+			iTestCase = 2;
 			break;
 
 		case 2:												//时域数据预览
@@ -367,7 +385,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 4:
 			fDriveSignal = NOTZERO;
 			iLoopStop = 0;
-			fDrive = 0.0001;
+			fDrive = 0.0001f;
 
 			while (iTestCase == 4)
 			{
@@ -678,7 +696,7 @@ void AlarmAbort(int *flag, int *Result, float *Resp, float Refer, float Highbox,
 	*flag = *Result > 0;																//结果大于0有通道控制信号超限
 }*/
 
-void LevelRata(float *fRate, float *fOffset,float RealRate, float LowT, float HighT)
+void LevelRate(float *fRate, float *fOffset,float RealRate, float LowT, float HighT)
 {
 	float LowRate;
 	float HighRate;
@@ -688,27 +706,30 @@ void LevelRata(float *fRate, float *fOffset,float RealRate, float LowT, float Hi
 	*fOffset = 0.975f*HighRate;
 }
 
-void InterpPoints(float *fY, float *fX, float *fx, float *fy, int iXLenth, int ixLenth)
+void InterpPoints(float *ifX, float *ifY, float *ifx, float *ify, int iXLenth, int ixLenth)
 {
 	int i;
-	float fdx;
+	float ifdx;
 	int ixAdd;
 
-	fdx = (fx[ixLenth] - fx[0]) / (iXLenth - 3);
-	fX[0] = 0.5f * fx[0];
-	fY[0] = fY[0];
-	fX[iXLenth] = 1.1f * fx[ixLenth];
-	fY[iXLenth] = fY[ixLenth];
-	fX[1] = fx[0];
-	fY[1] = fY[0];
+	ifdx = (ifx[ixLenth] - ifx[0]) / (iXLenth - 3);
+	ifX[0] = 0.5f * ifx[0];
+	ifY[0] = ify[0];
+	ifX[iXLenth] = 1.1f * ifx[ixLenth];
+	ifY[iXLenth] = ify[ixLenth];
+	ifX[1] = ifx[0];
+	ifY[1] = ify[0];
 	ixAdd = 1;
-	for (i = 0; i < iXLenth; i++)
+
+	for (i = 2; i < (iXLenth - 1); i++)
 	{
-		while ((*fX) > fx[ixAdd])
+		ifX[i] += ifdx;
+
+		while (ifX[i] > ifx[ixAdd])
 		{
 			ixAdd++;
 		}
 
-		*fY = (*fX - fx[ixAdd - 1])*(fx[ixAdd] - fx[ixAdd - 1]) / (fy[ixAdd] - fy[ixAdd - 1]);
+		ifY[i] = (ifX[i] - ifx[ixAdd - 1])*(ifx[ixAdd] - ifx[ixAdd - 1]) / (ify[ixAdd] - ify[ixAdd - 1]);
 	}
 }
