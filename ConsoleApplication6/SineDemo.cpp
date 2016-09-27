@@ -112,7 +112,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fWeightSum;
 	float fpChannelWeight[CHANNEL];
 
-	float fReferGain;
+	float fReferGain=0;
 	float fLevelupRate;
 	float fLeveldownRate;
 	float fLevelupOffset;
@@ -304,8 +304,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				fWeightSum += fpChannelWeight[i];
 			}
 
-			fReferGain = 0.03f;
-			fpReferGainGoal[iScheduleAdd] = 1;
+
 			LevelRate(&fLevelupRate, &fLevelupOffset, SInputPara.fLevelupRate, SInputPara.fLowRadioTime, SInputPara.fHighRadioTime);
 			LevelRate(&fLeveldownRate, &fLeveldownOffset, SInputPara.fLeveldownRate, SInputPara.fLowRadioTime, SInputPara.fHighRadioTime);
 
