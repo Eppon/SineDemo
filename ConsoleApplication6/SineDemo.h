@@ -117,6 +117,7 @@ SaftyPara SSaftyPara;
 typedef struct SchedulePara
 {
 	float fppScheTable[101][6];
+	float fScheTableLen;
 }SchedulePara;
 SchedulePara SSchedulePara;
 
@@ -203,6 +204,7 @@ typedef struct InputPara
 	float fExpander;
 	float fMisc;
 	float fppScheTable[101][6];
+	int   iScheTableLen;
 }InputPara;
 InputPara SInputPara = 
 {
@@ -287,12 +289,14 @@ InputPara SInputPara =
 	100.0f,//float fExpander;
 	100.0f,//float fMisc;
 	{						//float fppScheTable[101][6];
-		{ 5, 2000, 4, INF, 0.03, 1 },
+		{ 0, 2000, 0, INF, 0.03, 1 },
+		{ 5, 2000, 4, INF, 1, 0 },
 		{ 2000, 5, 4, INF, 1, 0 },
 		{ 5, 2000, 4, INF, 1, 0 },
 		{ 2000, 5, 4, INF, 1, 0 },
 		{ 5, 2000, 4, INF, 1, 0 }
-	}
+	},
+	3//int iScheTableLen;
 };
 
 typedef struct InputCmd
