@@ -3,6 +3,7 @@
 #include "math.h"
 
 const float SAMPINGRATE = 20000;
+const float SAMPINGTIME = 1/SAMPINGRATE;
 const float NOTZERO = 0.00001f;
 const int CHANNEL = 8;
 const int NOISECHECKTIME =(int)(5 * SAMPINGRATE);
@@ -224,8 +225,8 @@ InputPara SInputPara =
 	0,//int iWeightMode;
 	50,//float fLowRadioFreq;
 	250,//float fHighRadioFreq;
-	0.032,//float fLowRadioTime;
-	0.16,//float fHighRadioTime;
+	0.16,//float fLowRadioTime;
+	0.032,//float fHighRadioTime;
 	8,//int fMidRadioCycles;
 	0,//int iPretestType;
 	0,//int iSignalType;
@@ -249,10 +250,10 @@ InputPara SInputPara =
 	{ { 0.0f, 0.0f, 0.0f } },//float fppTableDesp[8][101];
 	{ { 0.0f, 0.0f, 0.0f } },//float fppTableLeftSlp[8][101];
 	{ { 0.0f, 0.0f, 0.0f } },//float fppTableRightSlp[8][101];
-	{ { 3.0f, 3.0f, 3.0f } },//float fppTableLowAlm[8][101];
-	{ { -3.0f, -3.0f, -3.0f } },//float fppTableHighAlm[8][101];
-	{ { 6.0f, 6.0f, 6.0f } },//float fppTableLowAbt[8][101];
-	{ { -6.0f, -6.0f, -6.0f } },//float fppTableHighAbt[8][101];
+	{ { 0.707f, 0.707f, 0.707f } },//float fppTableLowAlm[8][101];
+	{ { 1.414f, 1.414f, 1.414f } },//float fppTableHighAlm[8][101];
+	{ { 0.5f, 0.5f, 0.5f } },//float fppTableLowAbt[8][101];
+	{ { 2.0f, 2.0f, 2.0f } }, //float fppTableHighAbt[8][101];
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipProfileType[8];
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },//float fppUnitType[8][3];
 	{ 2, 2, 2, 2, 2, 2, 2, 2 }, //int ipChannelType[CHANNEL];0未激活，1观测，2控制，3限制
@@ -273,7 +274,7 @@ InputPara SInputPara =
 	-30.0f,//float fLeveldownRate;
 	10.0f,//float fMaxDrive;
 	0.03f,//float fSystemGain;
-	0.03f,//float fCSLLevel;
+	0.25f,//float fCSLLevel;
 	10.0f,//float fMaxShakerInput;
 	50.0f,//float fMaxShakerD;
 	50.0f,//float fMaxShakerV;
@@ -290,13 +291,13 @@ InputPara SInputPara =
 	100.0f,//float fMisc;
 	{						//float fppScheTable[101][6];
 		{ 0, 2000, 0, INF, 0.03, 1 },
-		{ 5, 2000, 4, INF, 1, 0 },
-		{ 2000, 5, 4, INF, 1, 0 },
-		{ 5, 2000, 4, INF, 1, 0 },
-		{ 2000, 5, 4, INF, 1, 0 },
-		{ 5, 2000, 4, INF, 1, 0 }
+		{ 5, 2000, 16, INF, 1, 0 },
+		{ 2000, 5, 16, INF, 1, 0 },
+		{ 5, 2000, 16, INF, 1, 0 },
+		{ 2000, 5, 16, INF, 1, 0 },
+		{ 5, 2000, 16, INF, 1, 0 }
 	},
-	3//int iScheTableLen;
+	5//int iScheTableLen;
 };
 
 typedef struct InputCmd
@@ -370,3 +371,6 @@ typedef struct UpdataData
 void LevelRate(float *fRate, float *fOffset, float RealRate, float LowT, float HighT);
 void InterpPoints(float *ifX, float *ifY, float *ifx, float *ify, int iXLenth, int ixLenth);
 float OcttoRate(float Oct);
+
+UpdataPara SUpdataPara;
+UpdataData SUpdataData;
