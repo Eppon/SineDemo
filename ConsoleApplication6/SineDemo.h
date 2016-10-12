@@ -2,7 +2,7 @@
 
 #include "math.h"
 
-const float SAMPINGRATE = 20000;
+const float SAMPINGRATE = 200000;
 const float SAMPINGTIME = 1/SAMPINGRATE;
 const float NOTZERO = 0.00001f;
 const int CHANNEL = 8;
@@ -25,6 +25,7 @@ typedef struct ControlPara
 	int iStartDirect;
 	int iDriveFix;
 	float fpTheoryTrans[2048];
+	float fTheoryWeight;
 	int iWeightMode;
 	float fLowRadioFreq;
 	float fHighRadioFreq;
@@ -137,6 +138,7 @@ typedef struct InputPara
 	int iStartDirect;
 	int iDriveFix;
 	float fpTheoryTrans[2048];
+	float fTheoryWeight;
 	int iWeightMode;
 	float fLowRadioFreq;
 	float fHighRadioFreq;
@@ -222,6 +224,7 @@ InputPara SInputPara =
 	1,//int iStartDirect;
 	0,//int iDriveFix;
 	{ 0 },//fpTheoryTrans[2048];
+	0.5,// fTheoryWeight;
 	0,//int iWeightMode;
 	50,//float fLowRadioFreq;
 	250,//float fHighRadioFreq;
@@ -291,11 +294,11 @@ InputPara SInputPara =
 	100.0f,//float fMisc;
 	{						//float fppScheTable[101][6];
 		{ 0, 2000, 0, INF, 0.03, 1 },
-		{ 5, 2000, 16, INF, 1, 0 },
-		{ 2000, 5, 16, INF, 1, 0 },
-		{ 5, 2000, 16, INF, 1, 0 },
-		{ 2000, 5, 16, INF, 1, 0 },
-		{ 5, 2000, 16, INF, 1, 0 }
+		{ 5, 2000, 4, INF, 1, 0 },
+		{ 2000, 5, 4, INF, 1, 0 },
+		{ 5, 2000, 4, INF, 1, 0 },
+		{ 2000, 5, 4, INF, 1, 0 },
+		{ 5, 2000, 4, INF, 1, 0 }
 	},
 	5//int iScheTableLen;
 };
@@ -371,6 +374,7 @@ typedef struct UpdataData
 void LevelRate(float *fRate, float *fOffset, float RealRate, float LowT, float HighT);
 void InterpPoints(float *ifX, float *ifY, float *ifx, float *ify, int iXLenth, int ixLenth);
 float OcttoRate(float Oct);
+float Interp(float x1, float y1, float x2, float y2, float x);
 
 UpdataPara SUpdataPara;
 UpdataData SUpdataData;
