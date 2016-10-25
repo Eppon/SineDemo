@@ -24,7 +24,8 @@ typedef struct ControlPara
 	int iRunMode;
 	int iStartDirect;
 	int iDriveFix;
-	float fpTheoryTrans[2048];
+	float fpHisUpFRF[2048];
+	float fpHisDownFRF[2048];
 	float fTheoryWeight;
 	int iWeightMode;
 	float fLowRadioFreq;
@@ -98,6 +99,7 @@ typedef struct SaftyPara
 	float fLeveldownRate;
 	float fMaxDrive;
 	float fSystemGain;
+	int   iAbortLoops;
 	float fCSLLevel;
 	float fMaxShakerInput;
 	float fMaxShakerD;
@@ -137,7 +139,8 @@ typedef struct InputPara
 	int iRunMode;
 	int iStartDirect;
 	int iDriveFix;
-	float fpTheoryTrans[2048];
+	float fpHisUpFRF[2048];
+	float fpHisDownFRF[2048];
 	float fTheoryWeight;
 	int iWeightMode;
 	float fLowRadioFreq;
@@ -191,6 +194,7 @@ typedef struct InputPara
 	float fLeveldownRate;
 	float fMaxDrive;
 	float fSystemGain;
+	int   iAbortLoops;
 	float fCSLLevel;
 	float fMaxShakerInput;
 	float fMaxShakerD;
@@ -223,7 +227,8 @@ InputPara SInputPara =
 	0,//int iRunMode;
 	1,//int iStartDirect;
 	0,//int iDriveFix;
-	{ 0 },//fpTheoryTrans[2048];
+	{ 0 },//float fpHisUpFRF[2048];
+	{0},//float fpHisDownFRF[2048];
 	0.5,// fTheoryWeight;
 	0,//int iWeightMode;
 	50,//float fLowRadioFreq;
@@ -277,6 +282,7 @@ InputPara SInputPara =
 	-30.0f,//float fLeveldownRate;
 	10.0f,//float fMaxDrive;
 	0.03f,//float fSystemGain;
+	1,//int iAbortLimilt
 	0.25f,//float fCSLLevel;
 	10.0f,//float fMaxShakerInput;
 	50.0f,//float fMaxShakerD;
@@ -313,6 +319,7 @@ typedef struct InputCmd
 	float fTestlevel;
 	float fSweepRate;
 	float fCtrRadio;
+	int   iCmdCount;
 }InputCmd;
 
 InputCmd SBufCmd = {
@@ -323,7 +330,8 @@ InputCmd SBufCmd = {
 	1,//int iSweepDirect;
 	0.03f,//float fTestlevel;
 	0.0f,//float fSweepRate;
-	1.0f//float fCtrRadio;
+	1.0f,//float fCtrRadio;
+	0//int   iCmdCount;
 };
 InputCmd SInputCmd = {
 	0,//int iExit;
@@ -333,7 +341,8 @@ InputCmd SInputCmd = {
 	1,//int iSweepDirect;
 	0.03f,//float fTestlevel;
 	0.0f,//float fSweepRate;
-	1.0f//float fCtrRadio;
+	1.0f,//float fCtrRadio;
+	0//int   iCmdCount;
 };
 typedef struct UpdataPara
 {
@@ -349,26 +358,26 @@ typedef struct UpdataPara
 	int iNoiseResult;
 	int iLoopResult;
 	int iAlarmorNot;
-	int iAlarmResult;
 	int iAbortorNot;
-	int iAbortResult;
 	int iCSLorNot;
 	int iCSLResult;
 	int iChannelAbort;
 	int iChannelAbortResult;
+	int iEffectCh;
 	int iLimitChannelEnable;
 }UpdataPara;
 
 typedef struct UpdataData
 {
 	float fFreq;
+	float fCtrRefer;
+	float fCtrResp;
+	float fCtrDrive;
 	float fpFourPhase[8];
 	float fpFourResp[8];
 	float fpRMSResp[8];
 	float fpPeakResp[8];
-	float fCtrRefer;
-	float fCtrResp;
-	float fCtrDrive;
+
 }UpdataData;
 
 void LevelRate(float *fRate, float *fOffset, float RealRate, float LowT, float HighT);
