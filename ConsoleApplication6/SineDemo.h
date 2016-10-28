@@ -221,7 +221,7 @@ InputPara SInputPara =
 	200,//int iTestCycles;
 	4.0f,//float fSweepRate;
 	20.f,//float fSweepTime;
-	1000.f,//float fMaxFreq;
+	2000.f,//float fMaxFreq;
 	5.f,//float fMinFreq;
 	0.03f,//float fInitialLevel;
 	0,//int iRunMode;
@@ -312,6 +312,7 @@ InputPara SInputPara =
 typedef struct InputCmd
 {
 	int iExit;
+	int iRunMode;
 	int iCmd;
 	int iTestCase;
 	int iScheduleAdd;
@@ -324,6 +325,7 @@ typedef struct InputCmd
 
 InputCmd SBufCmd = {
 	0,//int iExit;
+	0,//int iRunMode;
 	0,//int iCmd;
 	1,//int iTestCase;
 	0,//int iScheduleAdd;
@@ -347,6 +349,7 @@ InputCmd SInputCmd = {
 typedef struct UpdataPara
 {
 	int iCmd;
+	int iRunMode;
 	int iSweepDirect;
 	float fTestlevel;
 	float fSweepRate;

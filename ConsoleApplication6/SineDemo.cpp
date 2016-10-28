@@ -31,6 +31,17 @@
 					SUpdataPara.iStopReason = iStopReason;\
 					SUpdataPara.iSweepDirect = iSweepDirect;
 
+//                    iSendCount++;
+//                    byt1.append((char*)&SUpdataData,sizeof(SUpdataData));
+//                    if (iSendCount==5)
+//                    {
+//                        iSendCount=0;
+//                        emit SendData(byt1);
+//                        msleep(100);
+//                        byt1.clear();
+//                    }
+//
+
 #define SENDDATA 	SUpdataData.fCtrDrive = fDrive;\
 					SUpdataData.fCtrRefer = fpChannelRefer[CHANNEL];\
 					SUpdataData.fCtrResp = fpChannelRefer[CHANNEL];\
@@ -48,7 +59,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int j;
 	int i;
 	int iExit = 0;
-	int iTestCase = 0;
+	int iTestCase = 1;
 	int iCmd = 0;
 	int iStopReason;
 	int iCmdCount;
@@ -219,6 +230,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fInvFreqResp;
 	float fPreInvFreqResp;
 	float fpIFRFFreq[TABLELEN];
+	float fDeltaFreq;
 	float fpUpIFRF[TABLELEN];
 	float fpDownIFRF[TABLELEN];
 	int   iIFRFMark=1;
@@ -484,16 +496,19 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			/*计算理论驱动的频率轴*/
 			fpIFRFFreq[0] = SInputPara.fMinFreq;
+			fDeltaFreq = powf(2, (log2f(SInputPara.fMaxFreq / SInputPara.fMinFreq)) / (TABLELEN - 3));
 			for (i = 1; i < TABLELEN; i++)
 			{
-				fpIFRFFreq[i] = fpIFRFFreq[i - 1] + (SInputPara.fMaxFreq - SInputPara.fMinFreq) / (TABLELEN - 1);
+				fpIFRFFreq[i] = fpIFRFFreq[i - 1] * fDeltaFreq;
 			}
 
 			/*理论驱动权重*/
 			fTheorySetWeight = SInputPara.fTheoryWeight;
 			
 			/*初始化完毕跳转至case2*/
-			iTestCase = 2;
+			//iTestCase = 2;
+			/*初始化完毕跳转至case6*/
+			iTestCase = 6;
 			break;
 
 		case 2:												//时域数据预览
@@ -641,7 +656,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 5:
 			/*发送状态*/
 			SENDSTATE
-			iTestCase = 6;
+			iTestCase =7;
+			iStopReason = 4;
 			break;
 
 		case 6:
@@ -810,11 +826,11 @@ int _tmain(int argc, _TCHAR* argv[])
 					iStopReason = iCSLorNot ? 7 : iAbortorNot;
 
 					/*试验量级变化*/
-					fLevelGoal = (iRunMode == 1) ? fpReferGainGoal[iScheduleAdd] : fTestLevel;
+					fLevelGoal = (iRunMode != 1) ? fpReferGainGoal[iScheduleAdd] : fTestLevel;
 					fLevelRate = (fLevelGoal >= fReferGain) ? fLevelupRate : fLeveldownRate;
 					fLevelOffset = (fLevelGoal >= fReferGain) ? fLevelupOffset : fLeveldownOffset;
 					fTempGain = (fLevelRate * fCycletime + fLevelOffset) * fReferGain;						  //计算当前控制周期的驱动抬升倍数*原增益（速度曲线拟合公式：k*控制周期数/当前频率+偏置）
-					iLevelChanging = ((fTempGain < fLevelGoal) ^ (fReferGain > fpReferGainGoal[iScheduleAdd])) && (fReferGain != fpReferGainGoal[iScheduleAdd]);
+					iLevelChanging = ((fTempGain < fLevelGoal) ^ (fReferGain > fLevelGoal)) && (fReferGain != fLevelGoal);
 					fReferGain = iLevelChanging ? fTempGain : fpReferGainGoal[iScheduleAdd];
 					iScheduleAdd += ((~iLevelChanging) && iAddMove[iScheduleAdd]);
 
@@ -976,8 +992,6 @@ int _tmain(int argc, _TCHAR* argv[])
 					SENDDATA
 					fDrive *= fTempGain;
 
-					
-					/*判断停止原因*/
 					if (iLevelChanging == 0)
 					{
 						iTestCase = ((iStopReason = 2) && (iFRFCheck == 1)) ? 5 : iTestCase;
@@ -1016,8 +1030,8 @@ void InterpPoints(float *fpX, float *fpY, float *fpx, float *fpy, int iXLenth, i
 	int i;
 	float fdx;
 	int ixAdd;
-
-	fdx = (fpx[ixLenth] - fpx[0]) / (iXLenth - 3);
+	
+	fdx = powf(2,(log2f(fpx[ixLenth] / fpx[0])) / (iXLenth - 3));
 	fpX[0] = 0.5f * fpx[0];
 	fpY[0] = fpy[0];
 	fpX[iXLenth-1] = 1.1f * fpx[ixLenth];
@@ -1028,14 +1042,13 @@ void InterpPoints(float *fpX, float *fpY, float *fpx, float *fpy, int iXLenth, i
 
 	for (i = 2; i < (iXLenth - 1); i++)
 	{
-		fpX[i] = fpX[i - 1] + fdx;
+		fpX[i] = fpX[i - 1] * fdx;
 
 		while ((fpX[i] > fpx[ixAdd]) && (ixAdd < ixLenth))
 		{
 			ixAdd++;
 		}
-
-		fpY[i] = (fpX[i] - fpx[ixAdd - 1])*(fpy[ixAdd] - fpy[ixAdd - 1]) / (fpx[ixAdd] - fpx[ixAdd - 1]) + fpy[ixAdd - 1];
+		fpY[i] = powf(2, ((log2f(fpX[i] / fpx[ixAdd - 1])*log2f(fpy[ixAdd] / fpy[ixAdd - 1]) / (log2f((fpx[ixAdd] / fpx[ixAdd - 1])))) + log2f(fpy[ixAdd - 1])));
 	}
 }
 
