@@ -4,13 +4,14 @@
 #include "SineDemo.h"
 
 #define GETCMD 	iCmdCount = SBufCmd.iCmdCount;\
-				iExit = SBufCmd.iExit;\
-				iCmd = SBufCmd.iCmd;\
-				iTestCase = SBufCmd.iTestCase;\
-				iScheduleAdd = SBufCmd.iScheduleAdd;\
-				iSweepDirect = SBufCmd.iSweepDirect;\
-				fTestLevel = SBufCmd.fTestlevel;\
-				fSweepRate = SBufCmd.fSweepRate;\
+				iExit = SBufCmd.iExit; \
+				iCmd = SBufCmd.iCmd; \
+				iTestCase = SBufCmd.iTestCase; \
+				iSweepDirect = SBufCmd.iSweepDirect; \
+				fpReferGainGoal[iScheduleAdd] = SBufCmd.fTestlevel;\
+				fTestLevel = SBufCmd.fTestlevel; \
+				fSweepRate = SBufCmd.fSweepRate; \
+				iScheduleAdd = SBufCmd.iScheduleAdd; \
 				fCtrRadio = SBufCmd.fCtrRadio;
 
 #define SENDSTATE	SUpdataPara.iCmd = iCmd;\
@@ -62,7 +63,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int iTestCase = 1;
 	int iCmd = 0;
 	int iStopReason;
-	int iCmdCount;
+	int iCmdCount=0;
 
 	/*时域参数*/
 	float fpData[CHANNEL];
@@ -75,6 +76,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	double dTempFreq;
 	double dFreqRate;
 	float fSweepRate;
+	float fSetRate;
 	int   iSweepDirect;
 	float fPhase;
 	float fTempPhase;
@@ -333,6 +335,8 @@ int _tmain(int argc, _TCHAR* argv[])
 			iPassTimes = 0;
 			fColaSin = 0.0f;
 			fColaCos = 1.0f;
+			fSweepRate = OcttoRate(SInputPara.fSweepRate);
+
 
 			/*驱动驱动信号初始化*/
 			fDrive = 0.0f;
@@ -340,23 +344,68 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			/*计划表初始化*/
 			iScheduleAdd = 0;
-			for (i = 0; i < 100; i++)
+			if (SInputPara.iRunMode > 1)
 			{
-				fpFreqGoal1[i] = (SInputPara.fppScheTable[i][0] < SInputPara.fppScheTable[i][1]) ? SInputPara.fppScheTable[i][0] : SInputPara.fppScheTable[i][1];
-				fpFreqGoal2[i] = (SInputPara.fppScheTable[i][0] > SInputPara.fppScheTable[i][1]) ? SInputPara.fppScheTable[i][0] : SInputPara.fppScheTable[i][1];
-				fpScheduleRate[i] = OcttoRate(SInputPara.fppScheTable[i][2]);
-				fpScheduleRate[i] = (SInputPara.fppScheTable[i][0] < SInputPara.fppScheTable[i][1]) ? fpScheduleRate[i] : (-fpScheduleRate[i]);
-				llpTimeGoal[i] = SInputPara.fppScheTable[i][3] * SAMPINGRATE;
-				fpReferGainGoal[i] = SInputPara.fppScheTable[i][4];
-				iAddMove[i] = SInputPara.fppScheTable[i][5];
-				llpDwellTime[i] = 0;	
+				for (i = 0; i < SInputPara.iScheTableLen; i++)
+				{
+					fpFreqGoal1[i+2] = (SInputPara.fppScheTable[i][0] < SInputPara.fppScheTable[i][1]) ? SInputPara.fppScheTable[i][0] : SInputPara.fppScheTable[i][1];
+					fpFreqGoal2[i+2] = (SInputPara.fppScheTable[i][0] > SInputPara.fppScheTable[i][1]) ? SInputPara.fppScheTable[i][0] : SInputPara.fppScheTable[i][1];
+					fpScheduleRate[i+2] = OcttoRate(SInputPara.fppScheTable[i][2]);
+					fpScheduleRate[i+2] = (SInputPara.fppScheTable[i][0] < SInputPara.fppScheTable[i][1]) ? fpScheduleRate[i] : (-fpScheduleRate[i]);
+					llpTimeGoal[i+2] = SInputPara.fppScheTable[i][3] * SAMPINGRATE;
+					fpReferGainGoal[i+2] = SInputPara.fppScheTable[i][4];
+					iAddMove[i+2] = 0;
+					llpDwellTime[i+2] = 0;
+				}
+				iGetEnd = 0;
+				iGetEnd1 = 0;
+				iGetEnd2 = 0;
+				iGetEnd3 = 0;
+				iScheTableLen = SInputPara.iScheTableLen + 2;
 			}
-			iGetEnd = 0;
-			iGetEnd1 = 0;
-			iGetEnd2 = 0;
-			iGetEnd3 = 0;
-			iScheTableLen = SInputPara.iScheTableLen;
-
+			else
+			{
+				for (i = 0; i < SInputPara.iTestSweeps; i++)
+				{
+					fpFreqGoal1[i + 2] = SInputPara.fMinFreq;
+					fpFreqGoal2[i + 2] = SInputPara.fMaxFreq;
+					fpScheduleRate[i + 2] = OcttoRate(SInputPara.fSweepRate);
+					fpScheduleRate[i + 2] = ((SInputPara.iStartDirect == 0) ^ ((i % 2) == 0)) ? fpScheduleRate[i + 2] : (-fpScheduleRate[i + 2]);
+					llpTimeGoal[i + 2] = (SInputPara.fSweepRate == 0) ? SInputPara.fTestTime * SAMPINGRATE : INF;
+					fpReferGainGoal[i + 2] = 1;
+					iAddMove[i + 2] = 0;
+					llpDwellTime[i + 2] = 0;
+				}
+					iGetEnd = 0;
+					iGetEnd1 = 0;
+					iGetEnd2 = 0;
+					iGetEnd3 = 0;
+					iScheTableLen = SInputPara.iTestSweeps + 2;
+			}
+			/*试验均衡量级实现*/
+			fpFreqGoal1[0] = 0.5f * fpFreqGoal1[3];
+			fpFreqGoal2[0] = 1.5f * fpFreqGoal1[3];
+			fpScheduleRate[0] = 0.0f;
+			llpTimeGoal[0] = INF;
+			fpReferGainGoal[0] = 0.03;
+			iAddMove[0] = 1;
+			llpDwellTime[0] = 0;
+			/*试验初始量级实现*/
+			fpFreqGoal1[1] = 0.5f * fpFreqGoal1[3];
+			fpFreqGoal2[1] = 1.5f * fpFreqGoal1[3];
+			fpScheduleRate[1] = 0.0f;
+			llpTimeGoal[1] = INF;
+			fpReferGainGoal[1] = SInputPara.fInitialLevel;
+			iAddMove[1] = (SInputPara.iRunMode != 1);
+			llpDwellTime[1] = 0;
+			/*试验结束等待实现*/
+			fpFreqGoal1[iScheTableLen] = 0.5f *fpFreqGoal2[iScheTableLen - 1];
+			fpFreqGoal2[iScheTableLen] = 1.5f * fpFreqGoal2[iScheTableLen - 1];
+			fpScheduleRate[iScheTableLen] = 0.0f;
+			llpTimeGoal[iScheTableLen] = INF;
+			fpReferGainGoal[iScheTableLen] = SInputPara.fInitialLevel;
+			iAddMove[iScheTableLen] = 0;
+			llpDwellTime[iScheTableLen] = 0;
 			/*压缩策略初始化*/
 			fLowFreq = SInputPara.fLowRadioFreq;
 			fHighFreq = SInputPara.fHighRadioFreq;
@@ -436,6 +485,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			iAbortLoops = SInputPara.iAbortLoops;
 			fCycletime = 1;
 			fCSLLevel = SInputPara.fCSLLevel;
+			fTestLevel = 1;
 
 			/*安全参数设置*/
 			fLevelGoal = 0;
@@ -484,7 +534,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			/*参考谱驱动清零*/
 			for (i = 0; i < CHANNEL + 1; i++)
 			{
-				ipFreqMark[i] = (fpScheduleRate[1]>0) ? 1 : 2048;
+				ipFreqMark[i] = (fpScheduleRate[2]>0) ? 1 : 2048;
 				fpChannelRefer[i] = NOTZERO;
 				fCalDrive[i] = NOTZERO;
 				fFilterDrive[i] = NOTZERO;
@@ -495,11 +545,10 @@ int _tmain(int argc, _TCHAR* argv[])
 			iLimitEnable = 0;
 
 			/*计算理论驱动的频率轴*/
-			fpIFRFFreq[0] = SInputPara.fMinFreq;
-			fDeltaFreq = powf(2, (log2f(SInputPara.fMaxFreq / SInputPara.fMinFreq)) / (TABLELEN - 3));
-			for (i = 1; i < TABLELEN; i++)
+
+			for (i = 0; i < TABLELEN; i++)
 			{
-				fpIFRFFreq[i] = fpIFRFFreq[i - 1] * fDeltaFreq;
+				fpIFRFFreq[i] = fppReferFreq[0][i];
 			}
 
 			/*理论驱动权重*/
@@ -509,6 +558,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			//iTestCase = 2;
 			/*初始化完毕跳转至case6*/
 			iTestCase = 6;
+
 			break;
 
 		case 2:												//时域数据预览
@@ -661,10 +711,12 @@ int _tmain(int argc, _TCHAR* argv[])
 			break;
 
 		case 6:
+			fFreq = 5;
 			fDriveSignal = NOTZERO;
 			fDrive = 0.001f;
 			iAbortCount = 0;
 			dTempFreq = fFreq;
+
 			/*发送状态*/
 			SENDSTATE
 			while (iTestCase == 6)
@@ -674,10 +726,11 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 					fpData[i] = fDriveSignal;
 				};
-				dFreqRate = (iRunMode == 1) ? fSweepRate : fpScheduleRate[iScheduleAdd];
+				fSetRate = (fpScheduleRate[iScheduleAdd] >= 0) ? fSweepRate : -fSweepRate;
+				dFreqRate = ((iRunMode < 2) && (iScheduleAdd > 1) && (iScheduleAdd < iScheTableLen)) ? fSetRate : fpScheduleRate[iScheduleAdd];
 				dFreqRate = (iTestCase == 7) ? 0 : dFreqRate;
 				dFreqRate *= iSweepDirect;
-				dTempFreq += dFreqRate * dTempFreq;												//频率累乘的结果
+				dTempFreq += (dFreqRate * dTempFreq);												//频率累乘的结果
 				llpDwellTime[iScheduleAdd] += (dFreqRate == 0);									//驻留时间累加
 				iGetEnd1 = (fFreq < fpFreqGoal1[iScheduleAdd]);									//当前频率是否到达下限
 				iGetEnd2 = (fFreq > fpFreqGoal2[iScheduleAdd]);									//当前频率是否到达上限
@@ -821,12 +874,12 @@ int _tmain(int argc, _TCHAR* argv[])
 					
 					/*试验中止判断*/
 					iTestCase = ((iAbortorNot == 0) && (iChannelAbort == 0) && (iCSLorNot == 0)) ? iTestCase : 7;
-					iStopReason = iChannelAbort ? 5 : iAbortorNot;
-					iStopReason = iAbortorNot ? 6 : iAbortorNot;
-					iStopReason = iCSLorNot ? 7 : iAbortorNot;
+					iStopReason = iChannelAbort ? 5 : iStopReason;
+					iStopReason = iAbortorNot ? 6 : iStopReason;
+					iStopReason = iCSLorNot ? 7 : iStopReason;
 
 					/*试验量级变化*/
-					fLevelGoal = (iRunMode != 1) ? fpReferGainGoal[iScheduleAdd] : fTestLevel;
+					fLevelGoal = ((iRunMode < 2) && (iScheduleAdd > 1) && (iScheduleAdd < iScheTableLen)) ? fTestLevel : fpReferGainGoal[iScheduleAdd];
 					fLevelRate = (fLevelGoal >= fReferGain) ? fLevelupRate : fLeveldownRate;
 					fLevelOffset = (fLevelGoal >= fReferGain) ? fLevelupOffset : fLeveldownOffset;
 					fTempGain = (fLevelRate * fCycletime + fLevelOffset) * fReferGain;						  //计算当前控制周期的驱动抬升倍数*原增益（速度曲线拟合公式：k*控制周期数/当前频率+偏置）
@@ -837,12 +890,12 @@ int _tmain(int argc, _TCHAR* argv[])
 					/*当前逆频响保存*/
 					fInvFreqResp = fDrive / fpChannelResp[CHANNEL];
 
-					while ((fFreq > fpIFRFFreq[iIFRFMark]) && (dFreqRate > 0))
+					while ((fFreq > fpIFRFFreq[iIFRFMark]) && (dFreqRate > 0) && (fPrePreFreq != fPreFreq))
 					{
 						fpUpIFRF[iIFRFMark] = Interp(fPrePreFreq, fPreInvFreqResp, fPreFreq, fInvFreqResp, fpIFRFFreq[iIFRFMark]);
 						(iIFRFMark)++;
 					}
-					while ((fFreq < fpIFRFFreq[iIFRFMark- 1]) && (dFreqRate < 0))
+					while ((fFreq < fpIFRFFreq[iIFRFMark - 1]) && (dFreqRate < 0) && (fPrePreFreq != fPreFreq))
 					{
 						fpDownIFRF[iIFRFMark-1] = Interp(fPrePreFreq, fPreInvFreqResp, fPreFreq, fInvFreqResp, fpIFRFFreq[iIFRFMark-1]);
 						(iIFRFMark)--;
@@ -994,9 +1047,9 @@ int _tmain(int argc, _TCHAR* argv[])
 
 					if (iLevelChanging == 0)
 					{
-						iTestCase = ((iStopReason = 2) && (iFRFCheck == 1)) ? 5 : iTestCase;
-						iTestCase = ((iStopReason = 2) && (iFRFCheck == 0) && (iRunMode != 1)) ? 6 : iTestCase;
-						iTestCase = ((iStopReason = 4) && (iRunMode != 1)) ? 6 : iTestCase;
+						iTestCase = ((iStopReason == 2) && (iFRFCheck == 1)) ? 5 : iTestCase;
+						iTestCase = ((iStopReason == 2) && (iFRFCheck == 0) && (iRunMode != 1)) ? 6 : iTestCase;
+						iTestCase = ((iStopReason == 4) && (iRunMode != 1)) ? 6 : iTestCase;
 						if ((iCmdCount != SInputCmd.iCmdCount) && (iTestCase == 7))
 							{
 								GETCMD

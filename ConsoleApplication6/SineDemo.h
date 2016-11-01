@@ -216,7 +216,7 @@ typedef struct InputPara
 InputPara SInputPara = 
 {
 	0,//int iTestMode;
-	3,//int iTestSweeps;
+	5,//int iTestSweeps;
 	60.f,//float fTestTime;
 	200,//int iTestCycles;
 	4.0f,//float fSweepRate;
@@ -299,7 +299,6 @@ InputPara SInputPara =
 	100.0f,//float fExpander;
 	100.0f,//float fMisc;
 	{						//float fppScheTable[101][6];
-		{ 0, 2000, 0, INF, 0.03, 1 },
 		{ 5, 2000, 4, INF, 1, 0 },
 		{ 2000, 5, 4, INF, 1, 0 },
 		{ 5, 2000, 4, INF, 1, 0 },
@@ -390,3 +389,4 @@ float Interp(float x1, float y1, float x2, float y2, float x);
 
 UpdataPara SUpdataPara;
 UpdataData SUpdataData;
+double x;
