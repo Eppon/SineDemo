@@ -225,7 +225,7 @@ InputPara SInputPara =
 	5.f,//float fMinFreq;
 	0.03f,//float fInitialLevel;
 	0,//int iRunMode;
-	1,//int iStartDirect;
+	0,//int iStartDirect;
 	0,//int iDriveFix;
 	{ 0 },//float fpHisUpFRF[2048];
 	{0},//float fpHisDownFRF[2048];

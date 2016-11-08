@@ -259,7 +259,8 @@ int _tmain(int argc, _TCHAR* argv[])
 					GETCMD
 				}
 				/*发送状态*/
-				SENDSTATE	
+				SENDSTATE
+				SENDDATA
 			}
 
 			break;
@@ -268,6 +269,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			
 			/*发送状态*/
 			SENDSTATE
+			SENDDATA
 			/*采集数据清零*/
 			for (i = 0; i < CHANNEL; i++)
 			{
@@ -313,7 +315,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			iNoiseResult = 0;
 			iLoopResult = 0;
 			fLoopCheckFreq = SInputPara.fLoopCheckFreq;
-			fLoopCheckLevel = SInputPara.fLoopCheckLevel;
+			fLoopCheckLevel = powf(10, (SInputPara.fLoopCheckLevel / 20.0f));
 			fLoopCheckLimit = SInputPara.fLoopCheckLimit;
 			iFRFCheck = 1;
 
@@ -370,7 +372,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					fpFreqGoal1[i + 2] = SInputPara.fMinFreq;
 					fpFreqGoal2[i + 2] = SInputPara.fMaxFreq;
 					fpScheduleRate[i + 2] = OcttoRate(SInputPara.fSweepRate);
-					fpScheduleRate[i + 2] = ((SInputPara.iStartDirect == 0) ^ ((i % 2) == 0)) ? fpScheduleRate[i + 2] : (-fpScheduleRate[i + 2]);
+					fpScheduleRate[i + 2] = ((SInputPara.iStartDirect == 0) ^ ((i % 2) == 1)) ? fpScheduleRate[i + 2] : (-fpScheduleRate[i + 2]);
 					llpTimeGoal[i + 2] = (SInputPara.fSweepRate == 0) ? SInputPara.fTestTime * SAMPINGRATE : INF;
 					fpReferGainGoal[i + 2] = 1;
 					iAddMove[i + 2] = 0;
@@ -564,6 +566,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 2:												//时域数据预览
 			/*发送状态*/
 			SENDSTATE
+			SENDDATA
 			/*等待命令*/
 			while (iTestCase == 2)
 			{
@@ -574,6 +577,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 3:
 			/*发送状态*/
 			SENDSTATE
+			SENDDATA
 			fDriveSignal = NOTZERO;
 			iNoiseResult = 0;
 
@@ -615,6 +619,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 4:
 			/*发送状态*/
 			SENDSTATE
+			SENDDATA
 			fDriveSignal = NOTZERO;
 			fDrive = 0.001f;
 
@@ -672,7 +677,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						fpChannelResp[ipAcquCh[i]] = sqrtf((fSumX2[ipAcquCh[i]] - fSumX[ipAcquCh[i]] * fSumX[ipAcquCh[i]] / fLen) / fLen * 2);
 						fSumX2[ipAcquCh[i]] = 0;
 						fSumX[ipAcquCh[i]] = 0;
-						iLoopResult |= ((fpChannelResp[ipAcquCh[i]] < fLoopCheckLevel) << ipAcquCh[i]);
+						iLoopResult |= ((fpChannelResp[ipAcquCh[i]] < (fLoopCheckLevel * fpNoiseLevel[ipAcquCh[i]])) << ipAcquCh[i]);
 					}
 					/*发送状态*/
 					SENDSTATE
@@ -706,6 +711,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 5:
 			/*发送状态*/
 			SENDSTATE
+		    SENDDATA
 			iTestCase =7;
 			iStopReason = 4;
 			break;
@@ -719,6 +725,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			/*发送状态*/
 			SENDSTATE
+		    SENDDATA
 			while (iTestCase == 6)
 			{
 				llSampleNums++;
@@ -730,7 +737,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				dFreqRate = ((iRunMode < 2) && (iScheduleAdd > 1) && (iScheduleAdd < iScheTableLen)) ? fSetRate : fpScheduleRate[iScheduleAdd];
 				dFreqRate = (iTestCase == 7) ? 0 : dFreqRate;
 				dFreqRate *= iSweepDirect;
-				dTempFreq += (dFreqRate * dTempFreq);												//频率累乘的结果
+				dTempFreq += (dFreqRate * dTempFreq);											//频率累乘的结果
 				llpDwellTime[iScheduleAdd] += (dFreqRate == 0);									//驻留时间累加
 				iGetEnd1 = (fFreq < fpFreqGoal1[iScheduleAdd]);									//当前频率是否到达下限
 				iGetEnd2 = (fFreq > fpFreqGoal2[iScheduleAdd]);									//当前频率是否到达上限
@@ -879,7 +886,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					iStopReason = iCSLorNot ? 7 : iStopReason;
 
 					/*试验量级变化*/
-					fLevelGoal = ((iRunMode < 2) && (iScheduleAdd > 1) && (iScheduleAdd < iScheTableLen)) ? fTestLevel : fpReferGainGoal[iScheduleAdd];
+					fLevelGoal =  fTestLevel * fpReferGainGoal[iScheduleAdd];
 					fLevelRate = (fLevelGoal >= fReferGain) ? fLevelupRate : fLeveldownRate;
 					fLevelOffset = (fLevelGoal >= fReferGain) ? fLevelupOffset : fLeveldownOffset;
 					fTempGain = (fLevelRate * fCycletime + fLevelOffset) * fReferGain;						  //计算当前控制周期的驱动抬升倍数*原增益（速度曲线拟合公式：k*控制周期数/当前频率+偏置）
@@ -976,11 +983,11 @@ int _tmain(int argc, _TCHAR* argv[])
 					{
 						GETCMD
 					}
-					/*发送数据*/
-					SENDDATA
 
 					/*发送状态*/
 					SENDSTATE
+					/*发送数据*/
+					SENDDATA
 					//Caseswich
 				}
 
@@ -997,6 +1004,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 7:
 			/*发送状态*/
 			SENDSTATE
+			SENDDATA
 			while (iTestCase == 7)
 			{
 				for (i = 0; i < CHANNEL; i++)
@@ -1047,8 +1055,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 					if (iLevelChanging == 0)
 					{
-						iTestCase = ((iStopReason == 2) && (iFRFCheck == 1)) ? 5 : iTestCase;
-						iTestCase = ((iStopReason == 2) && (iFRFCheck == 0) && (iRunMode != 1)) ? 6 : iTestCase;
+						iTestCase = ((iStopReason == 3) && (iFRFCheck == 1)) ? 5 : iTestCase;
+						iTestCase = ((iStopReason == 3) && (iFRFCheck == 0) && (iRunMode != 1)) ? 6 : iTestCase;
 						iTestCase = ((iStopReason == 4) && (iRunMode != 1)) ? 6 : iTestCase;
 						if ((iCmdCount != SInputCmd.iCmdCount) && (iTestCase == 7))
 							{
