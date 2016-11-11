@@ -30,18 +30,9 @@
 					SUpdataPara.iNoiseResult = iNoiseResult;\
 					SUpdataPara.iScheduleAdd = iScheduleAdd;\
 					SUpdataPara.iStopReason = iStopReason;\
-					SUpdataPara.iSweepDirect = iSweepDirect;
-
-//                    iSendCount++;
-//                    byt1.append((char*)&SUpdataData,sizeof(SUpdataData));
-//                    if (iSendCount==5)
-//                    {
-//                        iSendCount=0;
-//                        emit SendData(byt1);
-//                        msleep(100);
-//                        byt1.clear();
-//                    }
-//
+					SUpdataPara.iSweepDirect = iSweepDirect;\
+					SUpdataPara.iDriveCliped = iDriveCliped;\
+					SUpdataPara.iDataCliped = iDataCliped;
 
 #define SENDDATA 	SUpdataData.fCtrDrive = fDrive;\
 					SUpdataData.fCtrRefer = fpChannelRefer[CHANNEL];\
@@ -52,6 +43,8 @@
 					memcpy(SUpdataData.fpRMSResp, fpRecogResp + CHANNEL, sizeof(float)* 8);\
 					memcpy(SUpdataData.fpPeakResp, fpRecogResp + CHANNEL * 2, sizeof(float)* 8);
 
+#define DATAACQU    fppSamples[SAMPLETIMES][CHANNEL]=;
+
 int _tmain(int argc, _TCHAR* argv[])
 
 {
@@ -59,6 +52,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	/*流程参数*/
 	int j;
 	int i;
+	int iPoints;
 	int iExit = 0;
 	int iTestCase = 1;
 	int iCmd = 0;
@@ -66,10 +60,18 @@ int _tmain(int argc, _TCHAR* argv[])
 	int iCmdCount=0;
 
 	/*时域参数*/
+	float fppSampleBuf1[SAMPLETIMES][CHANNEL];
+	float fppSampleBuf2[SAMPLETIMES][CHANNEL];
+	float fppSampleBuf3[SAMPLETIMES] = {0};
+	float fppSampleBuf4[SAMPLETIMES] = {0};
+	float *fppImportData=NULL;
+	float *fppExpertData=NULL;
 	float fpData[CHANNEL];
 	float fDriveSignal;
 	long long int llPreSampleNums;
 	long long int llSampleNums;
+	float fpSensitivity[CHANNEL];
+	int iDataCliped = 0;
 
 	/*频率相位参数*/
 	float fFreq;
@@ -90,6 +92,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	
 
 	/*多通道计算参数*/
+	int ipCheckCh[CHANNEL];
+	int iCheckChLen;
 	int ipAcquCh[CHANNEL];
 	int iAcquChLen;
 	int ipCtrCh[CHANNEL];
@@ -106,6 +110,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fLoopCheckLevel;
 	float fLoopCheckLimit;
 	int iFRFCheck;
+	int ipChannelCheck[CHANNEL];
 		
 	/*计划表参数*/
 	int   iScheduleAdd;
@@ -174,6 +179,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int   iWeightMode;
 	float fWeightSum;
 	float fpChannelWeight[CHANNEL];
+	float fpSenserRange[CHANNEL];
 
 	/*通道峰值判断，闭环判断参数*/
 	int   ipChannelAbort[CHANNEL+1];
@@ -227,6 +233,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int   iLimitEnable;
 	float fDrive;
 	float fMaxDrive;
+	int iDriveCliped = 0;
 
 	/*历史频响修正参数*/
 	float fInvFreqResp;
@@ -250,9 +257,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		switch (iTestCase)
 		{
-		case 0:												//等待初始化
+		case 0:												
 			while (iTestCase != 1)
 			{
+				
 				/*接收指令*/
 				if (iCmdCount != SBufCmd.iCmdCount)
 				{
@@ -265,7 +273,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			break;
 
-		case 1:                                             //进行初始化
+		case 1:                                             
 			
 			/*发送状态*/
 			SENDSTATE
@@ -277,13 +285,22 @@ int _tmain(int argc, _TCHAR* argv[])
 			}
 			llPreSampleNums = 0;
 			llSampleNums = 0;
+			fppImportData = fppSampleBuf3;
+			fppExpertData = fppSampleBuf4;
+
 
 			/*采集通道统计，控制通道统计，限制通道统计*/
 			iAcquChLen = 0;
 			iCtrLen = 0;
 			iCalLen = 0;
+			iCheckChLen = 0;
 			for (i = 0; i < CHANNEL; i++)
 			{
+				if (SInputPara.ipChannelCheck[i] == 1)
+				{
+					ipCheckCh[iCheckChLen] = i;
+					iCheckChLen++;
+				}
 				if (SInputPara.ipChannelType[i] == 1)
 				{
 					ipAcquCh[iAcquChLen] = i;
@@ -318,14 +335,15 @@ int _tmain(int argc, _TCHAR* argv[])
 			fLoopCheckLevel = powf(10, (SInputPara.fLoopCheckLevel / 20.0f));
 			fLoopCheckLimit = SInputPara.fLoopCheckLimit;
 			iFRFCheck = 1;
+			
 
 			/*试验初始设置初始化*/
 			iRunMode = SInputPara.iRunMode;
 			fInitialLevel = SInputPara.fInitialLevel;
 			dFreqRate = 0;
 			iSweepDirect = 1;
-			fMaxDrive = SInputPara.fMaxDrive;
-			
+			fMaxDrive = SInputPara.fMaxDrive * 1000;
+			 
 
 			/*频率、相位、整周期判断参数、Cola信号初始化*/
 			fFreq = 0.2f;
@@ -470,6 +488,8 @@ int _tmain(int argc, _TCHAR* argv[])
 			{
 				fpChannelWeight[i] = SInputPara.fpWeighting[i];
 				fWeightSum += fpChannelWeight[i];
+				fpSensitivity[i] = 1/SInputPara.fpSensitivity[i];
+				fpSenserRange[i] = SInputPara.fpSenserRange[i] * 10000;
 			}
 			for (i = 0; i < CHANNEL; i++)
 			{
@@ -497,6 +517,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			iChannelAbortResult = 0;
 			iCSLorNot = 0;
 			iCSLResult = 0;
+			
 			/*谱长度谱谱类型统计*/
 			float ipxLenth[CHANNEL];
 			for (i = 0; i < CHANNEL; i++)
@@ -563,14 +584,30 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			break;
 
-		case 2:												//时域数据预览
+		case 2:												
 			/*发送状态*/
 			SENDSTATE
 			SENDDATA
 			/*等待命令*/
 			while (iTestCase == 2)
 			{
+				fppImportData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
+				fppExpertData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
+				for (iPoints = 0; iPoints < SAMPLETIMES; iPoints++)
+				{
+					for (i = 0; i < CHANNEL; i++)
+					{
+						iDataCliped = 0;
+						iDataCliped |= ((abs(fppImportData[iPoints]) >= fpSenserRange[i]) << i);
+						fpData[i] = fppImportData[iPoints] * fpSensitivity[i];
+					}
+					
+					fppExpertData[iPoints]=fDriveSignal;
+				}
 				GETCMD
+				SENDSTATE
+				SENDDATA
+
 			}
 			break;
 
@@ -581,27 +618,37 @@ int _tmain(int argc, _TCHAR* argv[])
 			fDriveSignal = NOTZERO;
 			iNoiseResult = 0;
 
-			for (j = 0; j < NOISECHECKTIME; j += 8)
+			for (j = 0; j < NOISECHECKTIME; j += 100)
 			{
-				for (i = 0; i < CHANNEL; i++)
+				fppImportData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
+				fppExpertData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
+				for (iPoints = 0; iPoints < SAMPLETIMES; iPoints++)
 				{
-					fpData[i] = fDriveSignal;
-				}
+					for (i = 0; i < CHANNEL; i++)
+					{
+						iDataCliped = 0;
+						iDataCliped |= ((abs(fppImportData[iPoints]) >= fpSenserRange[i]) << i);
+						fpData[i] = fppImportData[iPoints] * fpSensitivity[i];
+					}
 
-				for (i = 0; i < iAcquChLen; i++)
-				{
-					fSumX[ipAcquCh[i]] += fpData[ipAcquCh[i]];
-					fSumX2[ipAcquCh[i]] += fpData[ipAcquCh[i]] * fpData[ipAcquCh[i]];
+					for (i = 0; i < iCheckChLen; i++)
+					{
+						fSumX[ipCheckCh[i]] += fpData[ipCheckCh[i]];
+						fSumX2[ipCheckCh[i]] += fpData[ipCheckCh[i]] * fpData[ipCheckCh[i]];
+					}
+					fppExpertData[iPoints] = 0;
 				}
+				GETCMD
+				SENDSTATE
+				SENDDATA
 			}
-
-			for (i = 0; i < iAcquChLen; i++)
+			for (i = 0; i < iCheckChLen; i++)
 			{
-				fpChannelResp[ipAcquCh[i]] = sqrtf((fSumX2[ipAcquCh[i]] - fSumX[ipAcquCh[i]] * fSumX[ipAcquCh[i]] / NOISECHECKTIME) / NOISECHECKTIME * 2);
-				fSumX2[ipAcquCh[i]] = 0;
-				fSumX[ipAcquCh[i]] = 0;
-				fpNoiseLevel[ipAcquCh[i]] = fpChannelResp[ipAcquCh[i]];
-				iNoiseResult |= ((fpChannelResp[ipAcquCh[i]]>fMaxNoise) << ipAcquCh[i]);
+				fpChannelResp[ipCheckCh[i]] = sqrtf((fSumX2[ipCheckCh[i]] - fSumX[ipCheckCh[i]] * fSumX[ipCheckCh[i]] / NOISECHECKTIME) / NOISECHECKTIME * 2);
+				fSumX2[ipCheckCh[i]] = 0;
+				fSumX[ipCheckCh[i]] = 0;
+				fpNoiseLevel[ipCheckCh[i]] = fpChannelResp[ipCheckCh[i]];
+				iNoiseResult |= ((fpChannelResp[ipCheckCh[i]]>fMaxNoise) << ipCheckCh[i]);
 			}
 
 			if (iNoiseResult > 0)
@@ -622,89 +669,95 @@ int _tmain(int argc, _TCHAR* argv[])
 			SENDDATA
 			fDriveSignal = NOTZERO;
 			fDrive = 0.001f;
-
+			iDataCliped = 0;
 			while (iTestCase == 4)
 			{
-				
-
-				llSampleNums++;
-				for (i = 0; i < CHANNEL; i++)
+				fppImportData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
+				fppExpertData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
+				for (iPoints = 0; iPoints < SAMPLETIMES; iPoints++)
 				{
-					fpData[i] = fDriveSignal;
-				};
 
-				fFreq = fLoopCheckFreq;
-
-				fPhase += PI2*fFreq / SAMPINGRATE;
-				iZeroPass = (fPhase > PI2);
-				fTempPhase = fPhase - PI2;
-				fPhase = iZeroPass ? fTempPhase : fPhase;
-
-				fColaSin = sinf(fPhase);
-				fColaCos = cosf(fPhase);
-
-				if (iZeroPass == 1)
-				{
-					iPassTimes++;
-					if (fFreq <= fLowFreq)
-						iCtrCycles = (int)ceilf(fLowTime * fFreq);
-					else if (fFreq <= fHighFreq)
-						iCtrCycles = iMidCycles;
-					else iCtrCycles = (int)ceilf(fHighTime * fFreq);
-					if (iPassTimes >= (iCtrCycles * fCtrRadio))
+					llSampleNums++;
+					for (i = 0; i < CHANNEL; i++)
 					{
-						iRefresh = 1;
-						iPassTimes = 0;
+						iDataCliped |= ((abs(fppImportData[iPoints]) >= fpSenserRange[i]) << i);
+						fpData[i] = fppImportData[iPoints] * fpSensitivity[i];;
+					};
+
+					fFreq = fLoopCheckFreq;
+
+					fPhase += PI2*fFreq / SAMPINGRATE;
+					iZeroPass = (fPhase > PI2);
+					fTempPhase = fPhase - PI2;
+					fPhase = iZeroPass ? fTempPhase : fPhase;
+
+					fColaSin = sinf(fPhase);
+					fColaCos = cosf(fPhase);
+
+					if (iZeroPass == 1)
+					{
+						iPassTimes++;
+						if (fFreq <= fLowFreq)
+							iCtrCycles = (int)ceilf(fLowTime * fFreq);
+						else if (fFreq <= fHighFreq)
+							iCtrCycles = iMidCycles;
+						else iCtrCycles = (int)ceilf(fHighTime * fFreq);
+						if (iPassTimes >= (iCtrCycles * fCtrRadio))
+						{
+							iRefresh = 1;
+							iPassTimes = 0;
+						}
 					}
-				}
-				else iRefresh = 0;
+					else iRefresh = 0;
 
-				for (i = 0; i < iAcquChLen; i++)
-				{
-					fSumX[ipAcquCh[i]] += fpData[ipAcquCh[i]];
-					fSumX2[ipAcquCh[i]] += fpData[ipAcquCh[i]] * fpData[ipAcquCh[i]];
-				}
-
-				if (iRefresh == 1)
-				{
-					fLen = float(llSampleNums - llPreSampleNums);
-					llPreSampleNums = llSampleNums;
-
-					/*闭环检查识别+判断*/
-					iLoopResult = 0;
-					for (i = 0; i < iAcquChLen; i++)
+					for (i = 0; i < iCheckChLen; i++)
 					{
-						fpChannelResp[ipAcquCh[i]] = sqrtf((fSumX2[ipAcquCh[i]] - fSumX[ipAcquCh[i]] * fSumX[ipAcquCh[i]] / fLen) / fLen * 2);
-						fSumX2[ipAcquCh[i]] = 0;
-						fSumX[ipAcquCh[i]] = 0;
-						iLoopResult |= ((fpChannelResp[ipAcquCh[i]] < (fLoopCheckLevel * fpNoiseLevel[ipAcquCh[i]])) << ipAcquCh[i]);
+						fSumX[ipCheckCh[i]] += fpData[ipCheckCh[i]];
+						fSumX2[ipCheckCh[i]] += fpData[ipCheckCh[i]] * fpData[ipCheckCh[i]];
 					}
-					/*发送状态*/
-					SENDSTATE
-					/*发送数据*/
-					SENDDATA
-					if (iLoopResult > 0)
+
+					if (iRefresh == 1)
 					{
-						if (fDrive > fLoopCheckLimit)
+						fLen = float(llSampleNums - llPreSampleNums);
+						llPreSampleNums = llSampleNums;
+
+						/*闭环检查识别+判断*/
+						iLoopResult = 0;
+						for (i = 0; i < iCheckChLen; i++)
+						{
+							fpChannelResp[ipCheckCh[i]] = sqrtf((fSumX2[ipCheckCh[i]] - fSumX[ipCheckCh[i]] * fSumX[ipCheckCh[i]] / fLen) / fLen * 2);
+							fSumX2[ipCheckCh[i]] = 0;
+							fSumX[ipCheckCh[i]] = 0;
+							iLoopResult |= ((fpChannelResp[ipCheckCh[i]] < (fLoopCheckLevel * fpNoiseLevel[ipCheckCh[i]])) << ipCheckCh[i]);
+						}
+						/*发送状态*/
+						SENDSTATE
+						/*发送数据*/
+						SENDDATA
+						iDataCliped = 0;
+						if (iLoopResult > 0)
+						{
+							if (fDrive > fLoopCheckLimit)
+							{
+								iTestCase = 7;
+								iStopReason = 2;
+							}
+							else fDrive *= 1.5;
+						}
+						else
 						{
 							iTestCase = 7;
-							iStopReason = 2;
+							iStopReason = 3;
 						}
-						else fDrive *= 1.5;
 					}
-					else 
+					/*接收命令*/
+					if (iCmdCount != SInputCmd.iCmdCount)
 					{
-						iTestCase = 7;
-						iStopReason = 3;
+						GETCMD
 					}
-				}
-				/*接收命令*/
-				if (iCmdCount != SInputCmd.iCmdCount)
-				{
-					GETCMD
-				}
 
-				fDriveSignal = fDrive * fColaSin;
+					fppExpertData[iPoints] = fDrive * fColaSin;
+				}
 			}
 			break;
 
@@ -726,350 +779,367 @@ int _tmain(int argc, _TCHAR* argv[])
 			/*发送状态*/
 			SENDSTATE
 		    SENDDATA
+			iDataCliped = 0;
 			while (iTestCase == 6)
 			{
-				llSampleNums++;
-				for (i = 0; i < CHANNEL; i++)
+				fppImportData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
+				fppExpertData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
+				for (iPoints = 0; iPoints < SAMPLETIMES; iPoints++)
 				{
-					fpData[i] = fDriveSignal;
-				};
-				fSetRate = (fpScheduleRate[iScheduleAdd] >= 0) ? fSweepRate : -fSweepRate;
-				dFreqRate = ((iRunMode < 2) && (iScheduleAdd > 1) && (iScheduleAdd < iScheTableLen)) ? fSetRate : fpScheduleRate[iScheduleAdd];
-				dFreqRate = (iTestCase == 7) ? 0 : dFreqRate;
-				dFreqRate *= iSweepDirect;
-				dTempFreq += (dFreqRate * dTempFreq);											//频率累乘的结果
-				llpDwellTime[iScheduleAdd] += (dFreqRate == 0);									//驻留时间累加
-				iGetEnd1 = (fFreq < fpFreqGoal1[iScheduleAdd]);									//当前频率是否到达下限
-				iGetEnd2 = (fFreq > fpFreqGoal2[iScheduleAdd]);									//当前频率是否到达上限
-				iGetEnd3 = (llpDwellTime[iScheduleAdd] >= llpTimeGoal[iScheduleAdd]);			//驻留时间到达时间目标
-				dTempFreq = iGetEnd1 ? fpFreqGoal1[iScheduleAdd] : dTempFreq;					//达到目标1，频率=目标；未达到，频率=累乘结果
-				dTempFreq = iGetEnd2 ? fpFreqGoal2[iScheduleAdd] : dTempFreq;					//达到目标2，频率=目标；未达到，频率=累乘结果
-				fFreq = dTempFreq;
-				iGetEnd = (iGetEnd1 | iGetEnd2 | iGetEnd3);
-				
-				fPhase += PI2*fFreq / SAMPINGRATE;
-				iZeroPass = (fPhase > PI2);
-				fTempPhase = fPhase - PI2;
-				fPhase = iZeroPass ? fTempPhase : fPhase;
-
-				fColaSin = sinf(fPhase);
-				fColaCos = cosf(fPhase);
-				//printf("f=%f,Phase=%f,sinx=%f,drive=%f,data=%f\n", fFreq, fPhase, fColaSin, fDriveSignal,fpData[0]);
-				if (iZeroPass == 1)
-				{
-					iPassTimes++;
-					if (fFreq <= fLowFreq)
-						iCtrCycles = (int)ceilf(fLowTime * fFreq);
-					else if (fFreq <= fHighFreq)
-						iCtrCycles = iMidCycles;
-					else iCtrCycles = (int)ceilf(fHighTime * fFreq);
-					if (iPassTimes >= (iCtrCycles * fCtrRadio))
+					llSampleNums++;
+					for (i = 0; i < CHANNEL; i++)
 					{
-						iRefresh = 1;
-						iPassTimes = 0;
+						
+						iDataCliped |= ((abs(fppImportData[iPoints]) >= fpSenserRange[i]) << i);
+						fpData[i] = fppImportData[iPoints] * fpSensitivity[i];;
+					};
+					fSetRate = (fpScheduleRate[iScheduleAdd] >= 0) ? fSweepRate : -fSweepRate;
+					dFreqRate = ((iRunMode < 2) && (iScheduleAdd > 1) && (iScheduleAdd < iScheTableLen)) ? fSetRate : fpScheduleRate[iScheduleAdd];
+					dFreqRate = (iTestCase == 7) ? 0 : dFreqRate;
+					dFreqRate *= iSweepDirect;
+					dTempFreq += (dFreqRate * dTempFreq);											//频率累乘的结果
+					llpDwellTime[iScheduleAdd] += (dFreqRate == 0);									//驻留时间累加
+					iGetEnd1 = (fFreq < fpFreqGoal1[iScheduleAdd]);									//当前频率是否到达下限
+					iGetEnd2 = (fFreq > fpFreqGoal2[iScheduleAdd]);									//当前频率是否到达上限
+					iGetEnd3 = (llpDwellTime[iScheduleAdd] >= llpTimeGoal[iScheduleAdd]);			//驻留时间到达时间目标
+					dTempFreq = iGetEnd1 ? fpFreqGoal1[iScheduleAdd] : dTempFreq;					//达到目标1，频率=目标；未达到，频率=累乘结果
+					dTempFreq = iGetEnd2 ? fpFreqGoal2[iScheduleAdd] : dTempFreq;					//达到目标2，频率=目标；未达到，频率=累乘结果
+					fFreq = dTempFreq;
+					iGetEnd = (iGetEnd1 | iGetEnd2 | iGetEnd3);
+
+					fPhase += PI2*fFreq / SAMPINGRATE;
+					iZeroPass = (fPhase > PI2);
+					fTempPhase = fPhase - PI2;
+					fPhase = iZeroPass ? fTempPhase : fPhase;
+
+					fColaSin = sinf(fPhase);
+					fColaCos = cosf(fPhase);
+					//printf("f=%f,Phase=%f,sinx=%f,drive=%f,data=%f\n", fFreq, fPhase, fColaSin, fDriveSignal,fpData[0]);
+					if (iZeroPass == 1)
+					{
+						iPassTimes++;
+						if (fFreq <= fLowFreq)
+							iCtrCycles = (int)ceilf(fLowTime * fFreq);
+						else if (fFreq <= fHighFreq)
+							iCtrCycles = iMidCycles;
+						else iCtrCycles = (int)ceilf(fHighTime * fFreq);
+						if (iPassTimes >= (iCtrCycles * fCtrRadio))
+						{
+							iRefresh = 1;
+							iPassTimes = 0;
+
+						}
 
 					}
+					else iRefresh = 0;
 
-				}
-				else iRefresh = 0;
-
-				for (i = 0; i < iAcquChLen; i++)
-				{
-					fpLastDataRe[ipAcquCh[i]] = fpDataRe[ipAcquCh[i]];
-					fpLastDataIm[ipAcquCh[i]] = fpDataIm[ipAcquCh[i]];
-					fpDataRe[ipAcquCh[i]] = fpData[ipAcquCh[i]] * fColaCos;
-					fpDataIm[ipAcquCh[i]] = fpData[ipAcquCh[i]] * fColaSin;
-					fpSumRe[ipAcquCh[i]] += fpDataRe[ipAcquCh[i]];
-					fpSumIm[ipAcquCh[i]] += fpDataIm[ipAcquCh[i]];
-
-					fSumX[ipAcquCh[i]] += fpData[ipAcquCh[i]];
-					fSumX2[ipAcquCh[i]] += fpData[ipAcquCh[i]] * fpData[ipAcquCh[i]];
-
-					fpMaxX[ipAcquCh[i]] = fpMaxX[ipAcquCh[i]] >= fpData[ipAcquCh[i]] ? fpMaxX[ipAcquCh[i]] : fpData[ipAcquCh[i]];
-					fpMinX[ipAcquCh[i]] = fpMinX[ipAcquCh[i]] <= fpData[ipAcquCh[i]] ? fpMinX[ipAcquCh[i]] : fpData[ipAcquCh[i]];
-				}
-
-				if (iRefresh == 1)
-				{
-					fCompLen = SAMPINGRATE * (fPhase) / (PI2*fFreq);
-					fLen = (float)(llSampleNums - llPreSampleNums);
-					fFourLen = fLen + fPreCompLen - fCompLen;
-					fPreCompLen = fCompLen;
-					llPreSampleNums = llSampleNums;
-					fCycletime = fLen*SAMPINGTIME;
-
-					iChannelAbortResult = 0;
-					iCSLResult = 0;
 					for (i = 0; i < iAcquChLen; i++)
 					{
-						/*傅里叶滤波法*/
-						fpCompDataRe[ipAcquCh[i]] = fpDataRe[ipAcquCh[i]] - (fpDataRe[ipAcquCh[i]] - fpLastDataRe[ipAcquCh[i]]) * fCompLen;
-						fpCompDataIm[ipAcquCh[i]] = fpDataIm[ipAcquCh[i]] - (fpDataIm[ipAcquCh[i]] - fpLastDataIm[ipAcquCh[i]]) * fCompLen;
-						fpCompAreaRe[ipAcquCh[i]] = (fpCompDataRe[ipAcquCh[i]] + fpDataRe[ipAcquCh[i]]);
-						fpCompAreaIm[ipAcquCh[i]] = (fpCompDataIm[ipAcquCh[i]] + fpDataIm[ipAcquCh[i]]);
-						fpRespRe[ipAcquCh[i]] = (fpSumRe[ipAcquCh[i]] * 2 + fpPreCompAreaRe[ipAcquCh[i]] - fpCompAreaRe[ipAcquCh[i]] - fpDataRe[ipAcquCh[i]] + fpPreDataRe[ipAcquCh[i]]) / fFourLen;
-						fpRespIm[ipAcquCh[i]] = (fpSumIm[ipAcquCh[i]] * 2 + fpPreCompAreaIm[ipAcquCh[i]] - fpCompAreaIm[ipAcquCh[i]] - fpDataIm[ipAcquCh[i]] + fpPreDataIm[ipAcquCh[i]]) / fFourLen;
-												
-						fpRecogResp[ipAcquCh[i]] = sqrtf(fpRespRe[ipAcquCh[i]] * fpRespRe[ipAcquCh[i]] + fpRespIm[ipAcquCh[i]] * fpRespIm[ipAcquCh[i]]);
-						fpFourPhase[ipAcquCh[i]] = atanf(fpRespRe[ipAcquCh[i]] / fpRespIm[ipAcquCh[i]]);
-											
-						fpPreCompAreaRe[ipAcquCh[i]] = fpCompAreaRe[ipAcquCh[i]];
-						fpPreCompAreaIm[ipAcquCh[i]] = fpCompAreaIm[ipAcquCh[i]];
-						fpPreDataRe[ipAcquCh[i]] = fpDataRe[ipAcquCh[i]];
-						fpPreDataIm[ipAcquCh[i]] = fpDataIm[ipAcquCh[i]];
-						fpSumRe[ipAcquCh[i]] = 0;
-						fpSumIm[ipAcquCh[i]] = 0;
-						
-						/*RMS法*/
-						fpRecogResp[ipAcquCh[i] + CHANNEL] = sqrtf((fSumX2[ipAcquCh[i]] - fSumX[ipAcquCh[i]] * fSumX[ipAcquCh[i]] / fLen) / fLen * 2);
-						fSumX2[ipAcquCh[i]] = 0;
-						fSumX[ipAcquCh[i]] = 0;
+						fpLastDataRe[ipAcquCh[i]] = fpDataRe[ipAcquCh[i]];
+						fpLastDataIm[ipAcquCh[i]] = fpDataIm[ipAcquCh[i]];
+						fpDataRe[ipAcquCh[i]] = fpData[ipAcquCh[i]] * fColaCos;
+						fpDataIm[ipAcquCh[i]] = fpData[ipAcquCh[i]] * fColaSin;
+						fpSumRe[ipAcquCh[i]] += fpDataRe[ipAcquCh[i]];
+						fpSumIm[ipAcquCh[i]] += fpDataIm[ipAcquCh[i]];
 
-						/*峰值法*/
-						fpRecogResp[ipAcquCh[i] + CHANNEL * 2] = (fpMaxX[ipAcquCh[i]] - fpMinX[ipAcquCh[i]]) / 2;
-						fpMaxX[ipAcquCh[i]] = 0;
-						fpMinX[ipAcquCh[i]] = 10000;
+						fSumX[ipAcquCh[i]] += fpData[ipAcquCh[i]];
+						fSumX2[ipAcquCh[i]] += fpData[ipAcquCh[i]] * fpData[ipAcquCh[i]];
 
-						/*通道响应选取（三种方法的识别结果）*/
-						fpChannelResp[ipAcquCh[i]] = fpRecogResp[CHANNEL*ipRecongMode[ipAcquCh[i]] + ipAcquCh[i]];
-
-						/*独立的通道中止判断*/
-						iChannelAbortResult |= (((fpChannelResp[ipAcquCh[i]] > fpChannellimit[ipAcquCh[i]] * fpChannelRefer[ipAcquCh[i]]) && (ipChannelAbort[i]==1) & (iScheduleAdd > 0)) << ipAcquCh[i]);
-						/*CSL判断*/
-						iCSLResult |= (((fpChannelResp[ipAcquCh[i]] < fCSLLevel * fpChannelRefer[ipAcquCh[i]])&(iScheduleAdd > 0)) << ipAcquCh[i]);
-						fpRespSlope[ipAcquCh[i]] = (fpChannelResp[ipAcquCh[i]] - fpPreChannelResp[ipAcquCh[i]]) / fCycletime;
-						fpPreChannelResp[ipAcquCh[i]] = fpChannelResp[ipAcquCh[i]];
+						fpMaxX[ipAcquCh[i]] = fpMaxX[ipAcquCh[i]] >= fpData[ipAcquCh[i]] ? fpMaxX[ipAcquCh[i]] : fpData[ipAcquCh[i]];
+						fpMinX[ipAcquCh[i]] = fpMinX[ipAcquCh[i]] <= fpData[ipAcquCh[i]] ? fpMinX[ipAcquCh[i]] : fpData[ipAcquCh[i]];
 					}
 
-					iChannelAbort = (iChannelAbortResult > 0);
-					iCSLorNot = (iCSLResult > 0);
-
-					/*控制通道加权*/
-					fpWeightResp[0] = 0;
-					fpWeightResp[1] = 0;
-					fpWeightResp[2] = 10000;
-					for (i = 0; i < iCtrLen; i++)
+					if (iRefresh == 1)
 					{
-						fpWeightResp[0] += fpChannelResp[ipCtrCh[i]] * fpChannelWeight[ipCtrCh[i]];										//乘以权重再累加
-						fpWeightResp[1] = fpWeightResp[1] >= fpChannelResp[ipCtrCh[i]] ? fpWeightResp[1] : fpChannelResp[ipCtrCh[i]];	//与已有最大值比较，取较大者为最大值
-						fpWeightResp[2] = fpWeightResp[2] <= fpChannelResp[ipCtrCh[i]] ? fpWeightResp[2] : fpChannelResp[ipCtrCh[i]];	//与已有最小值比较，取较小者为最小值
-					}
-					fpChannelResp[CHANNEL] = fpWeightResp[iWeightMode];																//根据加权模式，选择加权结果{平均值or最大值or最小值}
-					
-					/*Alarm判断
-					1.判断是否大于上限
-					2.判断是否小于下限
-					3.限制通道生效时，下限判断不起作用
-					4.计划表执行到试验初始量级之前（地址=0），报警不起作用*/
-					iAlarmorNot = (fpChannelResp[CHANNEL] > fpUpAlarm[ipFreqMark[CHANNEL]] * fpChannelRefer[CHANNEL]);
-					iAlarmorNot |= ((fpChannelResp[CHANNEL]< fpDownAlarm[ipFreqMark[CHANNEL]] * fpChannelRefer[CHANNEL])&(iLimitEnable != 0));
-					iAlarmorNot &= (iScheduleAdd > 0);
-					/*Abort判断
-					1.判断是否大于上限
-					2.判断是否小于下限
-					3.限制通道生效时，下限判断不起作用
-					4.计划表执行到试验初始量级之前（地址=0），中止不起作用
-					5.每触发一次，中止计数+1
-					6.中止次数到达设置值时，试验中止
-					7.中止次数在执行计划表下一项时，清零*/
-					iAbortOnce = (fpChannelResp[CHANNEL] > fpUpAbort[ipFreqMark[CHANNEL]] * fpChannelRefer[CHANNEL]);
-					iAbortOnce |= ((fpChannelResp[CHANNEL] < fpDownAbort[ipFreqMark[CHANNEL]] * fpChannelRefer[CHANNEL])&(iLimitEnable != 0));
-					iAbortOnce &= (iScheduleAdd > 0);
-					iAbortCount += iAbortOnce;
-					iAbortorNot = (iAbortCount >= iAbortLoops);
-					iAbortCount = (iGetEnd == 1) ? 0 : iAbortCount;
-					
-					/*试验中止判断*/
-					iTestCase = ((iAbortorNot == 0) && (iChannelAbort == 0) && (iCSLorNot == 0)) ? iTestCase : 7;
-					iStopReason = iChannelAbort ? 5 : iStopReason;
-					iStopReason = iAbortorNot ? 6 : iStopReason;
-					iStopReason = iCSLorNot ? 7 : iStopReason;
+						fCompLen = SAMPINGRATE * (fPhase) / (PI2*fFreq);
+						fLen = (float)(llSampleNums - llPreSampleNums);
+						fFourLen = fLen + fPreCompLen - fCompLen;
+						fPreCompLen = fCompLen;
+						llPreSampleNums = llSampleNums;
+						fCycletime = fLen*SAMPINGTIME;
 
-					/*试验量级变化*/
-					fLevelGoal =  fTestLevel * fpReferGainGoal[iScheduleAdd];
-					fLevelRate = (fLevelGoal >= fReferGain) ? fLevelupRate : fLeveldownRate;
-					fLevelOffset = (fLevelGoal >= fReferGain) ? fLevelupOffset : fLeveldownOffset;
-					fTempGain = (fLevelRate * fCycletime + fLevelOffset) * fReferGain;						  //计算当前控制周期的驱动抬升倍数*原增益（速度曲线拟合公式：k*控制周期数/当前频率+偏置）
-					iLevelChanging = ((fTempGain < fLevelGoal) ^ (fReferGain > fLevelGoal)) && (fReferGain != fLevelGoal);
-					fReferGain = iLevelChanging ? fTempGain : fpReferGainGoal[iScheduleAdd];
-					iScheduleAdd += ((~iLevelChanging) && iAddMove[iScheduleAdd]);
+						iChannelAbortResult = 0;
+						iCSLResult = 0;
+						for (i = 0; i < iAcquChLen; i++)
+						{
+							/*傅里叶滤波法*/
+							fpCompDataRe[ipAcquCh[i]] = fpDataRe[ipAcquCh[i]] - (fpDataRe[ipAcquCh[i]] - fpLastDataRe[ipAcquCh[i]]) * fCompLen;
+							fpCompDataIm[ipAcquCh[i]] = fpDataIm[ipAcquCh[i]] - (fpDataIm[ipAcquCh[i]] - fpLastDataIm[ipAcquCh[i]]) * fCompLen;
+							fpCompAreaRe[ipAcquCh[i]] = (fpCompDataRe[ipAcquCh[i]] + fpDataRe[ipAcquCh[i]]);
+							fpCompAreaIm[ipAcquCh[i]] = (fpCompDataIm[ipAcquCh[i]] + fpDataIm[ipAcquCh[i]]);
+							fpRespRe[ipAcquCh[i]] = (fpSumRe[ipAcquCh[i]] * 2 + fpPreCompAreaRe[ipAcquCh[i]] - fpCompAreaRe[ipAcquCh[i]] - fpDataRe[ipAcquCh[i]] + fpPreDataRe[ipAcquCh[i]]) / fFourLen;
+							fpRespIm[ipAcquCh[i]] = (fpSumIm[ipAcquCh[i]] * 2 + fpPreCompAreaIm[ipAcquCh[i]] - fpCompAreaIm[ipAcquCh[i]] - fpDataIm[ipAcquCh[i]] + fpPreDataIm[ipAcquCh[i]]) / fFourLen;
 
-					/*当前逆频响保存*/
-					fInvFreqResp = fDrive / fpChannelResp[CHANNEL];
+							fpRecogResp[ipAcquCh[i]] = sqrtf(fpRespRe[ipAcquCh[i]] * fpRespRe[ipAcquCh[i]] + fpRespIm[ipAcquCh[i]] * fpRespIm[ipAcquCh[i]]);
+							fpFourPhase[ipAcquCh[i]] = atanf(fpRespRe[ipAcquCh[i]] / fpRespIm[ipAcquCh[i]]);
 
-					while ((fFreq > fpIFRFFreq[iIFRFMark]) && (dFreqRate > 0) && (fPrePreFreq != fPreFreq))
-					{
-						fpUpIFRF[iIFRFMark] = Interp(fPrePreFreq, fPreInvFreqResp, fPreFreq, fInvFreqResp, fpIFRFFreq[iIFRFMark]);
-						(iIFRFMark)++;
-					}
-					while ((fFreq < fpIFRFFreq[iIFRFMark - 1]) && (dFreqRate < 0) && (fPrePreFreq != fPreFreq))
-					{
-						fpDownIFRF[iIFRFMark-1] = Interp(fPrePreFreq, fPreInvFreqResp, fPreFreq, fInvFreqResp, fpIFRFFreq[iIFRFMark-1]);
-						(iIFRFMark)--;
-					}
-					fPrePreFreq = fPreFreq;
-					fPreFreq = fFreq;
-					fPreInvFreqResp = fInvFreqResp;
+							fpPreCompAreaRe[ipAcquCh[i]] = fpCompAreaRe[ipAcquCh[i]];
+							fpPreCompAreaIm[ipAcquCh[i]] = fpCompAreaIm[ipAcquCh[i]];
+							fpPreDataRe[ipAcquCh[i]] = fpDataRe[ipAcquCh[i]];
+							fpPreDataIm[ipAcquCh[i]] = fpDataIm[ipAcquCh[i]];
+							fpSumRe[ipAcquCh[i]] = 0;
+							fpSumIm[ipAcquCh[i]] = 0;
 
-					/*历史逆频响计算*/
-					fHighIFRF = (dFreqRate >= 0) ? fpUpIFRF[iIFRFMark] : fpDownIFRF[iIFRFMark];
-					fLowIFRF = (dFreqRate >= 0) ? fpUpIFRF[iIFRFMark - 1] : fpDownIFRF[iIFRFMark - 1];
-					fTheoryWeight = ((fHighIFRF > 0) && (fLowIFRF > 0)) ? fTheorySetWeight : 0;
-					fTheoryIFRF = Interp(fpIFRFFreq[iIFRFMark - 1], fLowIFRF, fpIFRFFreq[iIFRFMark], fHighIFRF, fFreq);
-					
-					/*控制参考谱计算*/
-					while ((fFreq > fppReferFreq[0][ipFreqMark[CHANNEL]]) && (dFreqRate > 0))
-					{
-						(ipFreqMark[CHANNEL])++;
-					}
-					while ((fFreq < fppReferFreq[0][ipFreqMark[CHANNEL] - 1]) && (dFreqRate < 0))
-					{
-						(ipFreqMark[CHANNEL])--;
-					}
+							/*RMS法*/
+							fpRecogResp[ipAcquCh[i] + CHANNEL] = sqrtf((fSumX2[ipAcquCh[i]] - fSumX[ipAcquCh[i]] * fSumX[ipAcquCh[i]] / fLen) / fLen * 2);
+							fSumX2[ipAcquCh[i]] = 0;
+							fSumX[ipAcquCh[i]] = 0;
 
-					fpChannelRefer[CHANNEL] = fppReferAmp[0][ipFreqMark[CHANNEL]] - (fppReferAmp[0][ipFreqMark[CHANNEL]] - fppReferAmp[0][ipFreqMark[CHANNEL] - 1])\
-						*(fppReferFreq[0][ipFreqMark[CHANNEL]] - fFreq) / (fppReferFreq[0][ipFreqMark[CHANNEL]] - fppReferFreq[0][ipFreqMark[CHANNEL] - 1]);
+							/*峰值法*/
+							fpRecogResp[ipAcquCh[i] + CHANNEL * 2] = (fpMaxX[ipAcquCh[i]] - fpMinX[ipAcquCh[i]]) / 2;
+							fpMaxX[ipAcquCh[i]] = 0;
+							fpMinX[ipAcquCh[i]] = 10000;
 
-					fpChannelRefer[CHANNEL] *= fReferGain;
+							/*通道响应选取（三种方法的识别结果）*/
+							fpChannelResp[ipAcquCh[i]] = fpRecogResp[CHANNEL*ipRecongMode[ipAcquCh[i]] + ipAcquCh[i]];
 
-					/*控制驱动计算*/
-					fCalDrive[CHANNEL] = fInvFreqResp * fpChannelRefer[CHANNEL];
-					fCalDrive[CHANNEL] = (fCalDrive[CHANNEL]>NOTZERO ? fCalDrive[CHANNEL] : NOTZERO);
-					fFilterDrive[CHANNEL] = sqrtf(fCalDrive[CHANNEL] * fPreCalDrive[CHANNEL]);
-					fPreCalDrive[CHANNEL] = fCalDrive[CHANNEL];
-					iEffectCh = CHANNEL;
-					/*历史驱动计算*/
-					fTheoryDrive = fTheoryIFRF * fpChannelRefer[CHANNEL];
-					/*历史驱动加权*/
-					fFilterDrive[CHANNEL] = fFilterDrive[CHANNEL] + fTheoryWeight*(fTheoryDrive - fFilterDrive[CHANNEL]);
-
-
-					/*计算限制通道的谱和驱动*/
-					for (i = 0; i < iCalLen; i++)
-					{
-						/*谱计算*/
-						while ((fFreq > fppReferFreq[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]]]) && (dFreqRate > 0)){
-							(ipFreqMark[ipCalCh[i]])++;
-						}
-						while ((fFreq < fppReferFreq[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]] - 1]) && (dFreqRate < 0)){
-							(ipFreqMark[ipCalCh[i]])--;
+							/*独立的通道中止判断*/
+							iChannelAbortResult |= (((fpChannelResp[ipAcquCh[i]] > fpChannellimit[ipAcquCh[i]] * fpChannelRefer[ipAcquCh[i]]) && (ipChannelAbort[i] == 1) & (iScheduleAdd > 0)) << ipAcquCh[i]);
+							/*CSL判断*/
+							fpRespSlope[ipAcquCh[i]] = (fpChannelResp[ipAcquCh[i]] - fpPreChannelResp[ipAcquCh[i]]) / fCycletime;
+							iCSLResult |= (((fpChannelResp[ipAcquCh[i]] < fCSLLevel * fpChannelRefer[ipAcquCh[i]])&&(iScheduleAdd > 0)) << ipAcquCh[i]);
+							fpPreChannelResp[ipAcquCh[i]] = fpChannelResp[ipAcquCh[i]];
 						}
 
-						fpChannelRefer[ipCalCh[i]] = fppReferAmp[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]]] - (fppReferAmp[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]]] - fppReferAmp[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]] - 1])\
-							*(fppReferFreq[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]]] - fFreq) / (fppReferFreq[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]]] - fppReferFreq[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]] - 1]);
-						
-						fpChannelRefer[ipCalCh[i]] *= fReferGain;
+						iChannelAbort = (iChannelAbortResult > 0);
+						iCSLorNot = (iCSLResult > 0);
 
-						fCalDrive[ipCalCh[i]] = fDrive / fpChannelResp[ipCalCh[i]] * fpChannelRefer[ipCalCh[i]];
-						fCalDrive[ipCalCh[i]] = (fCalDrive[ipCalCh[i]]>NOTZERO ? fCalDrive[ipCalCh[i]] : NOTZERO);
-						fFilterDrive[ipCalCh[i]] = sqrtf(fCalDrive[ipCalCh[i]] * fPreCalDrive[ipCalCh[i]]);
-						fFilterDrive[ipCalCh[i]] = (fFilterDrive[ipCalCh[i]] > NOTZERO ? fCalDrive[ipCalCh[i]] : NOTZERO);
-						fPreCalDrive[ipCalCh[i]] = fCalDrive[ipCalCh[i]];
-						/*限制通道与控制通道取较小驱动*/
-						iEffectCh = (fFilterDrive[ipCalCh[i]] < fFilterDrive[iEffectCh] ? ipCalCh[i] : iEffectCh);
+						/*控制通道加权*/
+						fpWeightResp[0] = 0;
+						fpWeightResp[1] = 0;
+						fpWeightResp[2] = 10000;
+						for (i = 0; i < iCtrLen; i++)
+						{
+							fpWeightResp[0] += fpChannelResp[ipCtrCh[i]] * fpChannelWeight[ipCtrCh[i]];										//乘以权重再累加
+							fpWeightResp[1] = fpWeightResp[1] >= fpChannelResp[ipCtrCh[i]] ? fpWeightResp[1] : fpChannelResp[ipCtrCh[i]];	//与已有最大值比较，取较大者为最大值
+							fpWeightResp[2] = fpWeightResp[2] <= fpChannelResp[ipCtrCh[i]] ? fpWeightResp[2] : fpChannelResp[ipCtrCh[i]];	//与已有最小值比较，取较小者为最小值
+						}
+						fpChannelResp[CHANNEL] = fpWeightResp[iWeightMode];																//根据加权模式，选择加权结果{平均值or最大值or最小值}
+
+						/*Alarm判断
+						1.判断是否大于上限
+						2.判断是否小于下限
+						3.限制通道生效时，下限判断不起作用
+						4.计划表执行到试验初始量级之前（地址=0），报警不起作用*/
+						iAlarmorNot = (fpChannelResp[CHANNEL] > fpUpAlarm[ipFreqMark[CHANNEL]] * fpChannelRefer[CHANNEL]);
+						iAlarmorNot |= ((fpChannelResp[CHANNEL]< fpDownAlarm[ipFreqMark[CHANNEL]] * fpChannelRefer[CHANNEL])&(iLimitEnable != 0));
+						iAlarmorNot &= (iScheduleAdd > 0);
+						/*Abort判断
+						1.判断是否大于上限
+						2.判断是否小于下限
+						3.限制通道生效时，下限判断不起作用
+						4.计划表执行到试验初始量级之前（地址=0），中止不起作用
+						5.每触发一次，中止计数+1
+						6.中止次数到达设置值时，试验中止
+						7.中止次数在执行计划表下一项时，清零*/
+						iAbortOnce = (fpChannelResp[CHANNEL] > fpUpAbort[ipFreqMark[CHANNEL]] * fpChannelRefer[CHANNEL]);
+						iAbortOnce |= ((fpChannelResp[CHANNEL] < fpDownAbort[ipFreqMark[CHANNEL]] * fpChannelRefer[CHANNEL])&(iLimitEnable != 0));
+						iAbortOnce &= (iScheduleAdd > 0);
+						iAbortCount += iAbortOnce;
+						iAbortorNot = (iAbortCount >= iAbortLoops);
+						iAbortCount = (iGetEnd == 1) ? 0 : iAbortCount;
+
+						/*试验中止判断*/
+						iTestCase = ((iAbortorNot == 0) && (iChannelAbort == 0) && (iCSLorNot == 0)) ? iTestCase : 7;
+						iStopReason = iChannelAbort ? 5 : iStopReason;
+						iStopReason = iAbortorNot ? 6 : iStopReason;
+						iStopReason = iCSLorNot ? 7 : iStopReason;
+
+						/*试验量级变化*/
+						fLevelGoal = fTestLevel * fpReferGainGoal[iScheduleAdd];
+						fLevelRate = (fLevelGoal >= fReferGain) ? fLevelupRate : fLeveldownRate;
+						fLevelOffset = (fLevelGoal >= fReferGain) ? fLevelupOffset : fLeveldownOffset;
+						fTempGain = (fLevelRate * fCycletime + fLevelOffset) * fReferGain;						  //计算当前控制周期的驱动抬升倍数*原增益（速度曲线拟合公式：k*控制周期数/当前频率+偏置）
+						iLevelChanging = ((fTempGain < fLevelGoal) ^ (fReferGain > fLevelGoal)) && (fReferGain != fLevelGoal);
+						fReferGain = iLevelChanging ? fTempGain : fpReferGainGoal[iScheduleAdd];
+						iScheduleAdd += ((~iLevelChanging) && iAddMove[iScheduleAdd]);
+
+						/*当前逆频响保存*/
+						fInvFreqResp = fDrive / fpChannelResp[CHANNEL];
+
+						while ((fFreq > fpIFRFFreq[iIFRFMark]) && (dFreqRate > 0) && (fPrePreFreq != fPreFreq))
+						{
+							fpUpIFRF[iIFRFMark] = Interp(fPrePreFreq, fPreInvFreqResp, fPreFreq, fInvFreqResp, fpIFRFFreq[iIFRFMark]);
+							(iIFRFMark)++;
+						}
+						while ((fFreq < fpIFRFFreq[iIFRFMark - 1]) && (dFreqRate < 0) && (fPrePreFreq != fPreFreq))
+						{
+							fpDownIFRF[iIFRFMark - 1] = Interp(fPrePreFreq, fPreInvFreqResp, fPreFreq, fInvFreqResp, fpIFRFFreq[iIFRFMark - 1]);
+							(iIFRFMark)--;
+						}
+						fPrePreFreq = fPreFreq;
+						fPreFreq = fFreq;
+						fPreInvFreqResp = fInvFreqResp;
+
+						/*历史逆频响计算*/
+						fHighIFRF = (dFreqRate >= 0) ? fpUpIFRF[iIFRFMark] : fpDownIFRF[iIFRFMark];
+						fLowIFRF = (dFreqRate >= 0) ? fpUpIFRF[iIFRFMark - 1] : fpDownIFRF[iIFRFMark - 1];
+						fTheoryWeight = ((fHighIFRF > 0) && (fLowIFRF > 0)) ? fTheorySetWeight : 0;
+						fTheoryIFRF = Interp(fpIFRFFreq[iIFRFMark - 1], fLowIFRF, fpIFRFFreq[iIFRFMark], fHighIFRF, fFreq);
+
+						/*控制参考谱计算*/
+						while ((fFreq > fppReferFreq[0][ipFreqMark[CHANNEL]]) && (dFreqRate > 0))
+						{
+							(ipFreqMark[CHANNEL])++;
+						}
+						while ((fFreq < fppReferFreq[0][ipFreqMark[CHANNEL] - 1]) && (dFreqRate < 0))
+						{
+							(ipFreqMark[CHANNEL])--;
+						}
+
+						fpChannelRefer[CHANNEL] = fppReferAmp[0][ipFreqMark[CHANNEL]] - (fppReferAmp[0][ipFreqMark[CHANNEL]] - fppReferAmp[0][ipFreqMark[CHANNEL] - 1])\
+							*(fppReferFreq[0][ipFreqMark[CHANNEL]] - fFreq) / (fppReferFreq[0][ipFreqMark[CHANNEL]] - fppReferFreq[0][ipFreqMark[CHANNEL] - 1]);
+
+						fpChannelRefer[CHANNEL] *= fReferGain;
+
+						/*控制驱动计算*/
+						fCalDrive[CHANNEL] = fInvFreqResp * fpChannelRefer[CHANNEL];
+						fCalDrive[CHANNEL] = (fCalDrive[CHANNEL] > NOTZERO ? fCalDrive[CHANNEL] : NOTZERO);
+						fFilterDrive[CHANNEL] = sqrtf(fCalDrive[CHANNEL] * fPreCalDrive[CHANNEL]);
+						fPreCalDrive[CHANNEL] = fCalDrive[CHANNEL];
+						iEffectCh = CHANNEL;
+						/*历史驱动计算*/
+						fTheoryDrive = fTheoryIFRF * fpChannelRefer[CHANNEL];
+						/*历史驱动加权*/
+						fFilterDrive[CHANNEL] = fFilterDrive[CHANNEL] + fTheoryWeight*(fTheoryDrive - fFilterDrive[CHANNEL]);
+
+
+						/*计算限制通道的谱和驱动*/
+						for (i = 0; i < iCalLen; i++)
+						{
+							/*谱计算*/
+							while ((fFreq > fppReferFreq[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]]]) && (dFreqRate > 0)){
+								(ipFreqMark[ipCalCh[i]])++;
+							}
+							while ((fFreq < fppReferFreq[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]] - 1]) && (dFreqRate < 0)){
+								(ipFreqMark[ipCalCh[i]])--;
+							}
+
+							fpChannelRefer[ipCalCh[i]] = fppReferAmp[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]]] - (fppReferAmp[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]]] - fppReferAmp[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]] - 1])\
+								*(fppReferFreq[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]]] - fFreq) / (fppReferFreq[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]]] - fppReferFreq[ipReferType[ipCalCh[i]]][ipFreqMark[ipCalCh[i]] - 1]);
+
+							fpChannelRefer[ipCalCh[i]] *= fReferGain;
+
+							fCalDrive[ipCalCh[i]] = fDrive / fpChannelResp[ipCalCh[i]] * fpChannelRefer[ipCalCh[i]];
+							fCalDrive[ipCalCh[i]] = (fCalDrive[ipCalCh[i]]>NOTZERO ? fCalDrive[ipCalCh[i]] : NOTZERO);
+							fFilterDrive[ipCalCh[i]] = sqrtf(fCalDrive[ipCalCh[i]] * fPreCalDrive[ipCalCh[i]]);
+							fFilterDrive[ipCalCh[i]] = (fFilterDrive[ipCalCh[i]] > NOTZERO ? fCalDrive[ipCalCh[i]] : NOTZERO);
+							fPreCalDrive[ipCalCh[i]] = fCalDrive[ipCalCh[i]];
+							/*限制通道与控制通道取较小驱动*/
+							iEffectCh = (fFilterDrive[ipCalCh[i]] < fFilterDrive[iEffectCh] ? ipCalCh[i] : iEffectCh);
+						}
+
+						/*驱动选择：
+						1、控制驱动与限制驱动中，选择最小驱动作为实际发出驱动
+						2、驱动最大不超过限值
+						3、选择限制通道驱动时，限制通道使能（iLimitEnable置真）*/
+						fDrive = fFilterDrive[iEffectCh];
+						iDriveCliped = 0;
+						iDriveCliped = fFilterDrive[iEffectCh] > fMaxDrive;
+						fDrive = (fFilterDrive[iEffectCh] < fMaxDrive) ? fDrive : fMaxDrive;
+						iLimitEnable = (iEffectCh != CHANNEL);
+
+						printf("Ff=%f,Ref=%f,Resp=%f,Drive=%f\n", fFreq, fpChannelRefer[CHANNEL], fpChannelResp[CHANNEL], fDrive);
+
+						if ((iTestCase != 7) && (iCmdCount != SBufCmd.iCmdCount))
+						{
+							GETCMD
+						}
+
+						/*发送状态*/
+						SENDSTATE
+					    /*发送数据*/
+					    SENDDATA
+						iDataCliped = 0;
 					}
 
-					/*驱动选择：
-					1、控制驱动与限制驱动中，选择最小驱动作为实际发出驱动
-					2、驱动最大不超过限值
-					3、选择限制通道驱动时，限制通道使能（iLimitEnable置真）*/
-					fDrive = fFilterDrive[iEffectCh]; 
-					fDrive = (fFilterDrive[iEffectCh] < fMaxDrive) ? fDrive : fMaxDrive;
-					iLimitEnable = (iEffectCh != CHANNEL);
-															
-					printf("Ff=%f,Ref=%f,Resp=%f,Drive=%f\n", fFreq, fpChannelRefer[CHANNEL], fpChannelResp[CHANNEL], fDrive);
-					
-					if ((iTestCase != 7) && (iCmdCount != SBufCmd.iCmdCount))
-					{
-						GETCMD
-					}
+					fppExpertData[iPoints] = fDrive * fColaSin;
 
-					/*发送状态*/
-					SENDSTATE
-					/*发送数据*/
-					SENDDATA
-					//Caseswich
+					iScheduleAdd += iGetEnd;//达到目标，计划表地址+1；未达到，+0
+					iTestCase = (iScheduleAdd == iScheTableLen) ? 7 : iTestCase;
+					iStopReason = (iScheduleAdd == iScheTableLen) ? 8 : iStopReason;
 				}
 
-				fDriveSignal = fDrive * fColaSin;
-
-				iScheduleAdd += iGetEnd;//达到目标，计划表地址+1；未达到，+0
-				iTestCase = (iScheduleAdd == iScheTableLen) ? 7 : iTestCase;
-				iStopReason = (iScheduleAdd == iScheTableLen) ? 8 : iStopReason;
 			}
-		
-
 			break;
 
 		case 7:
 			/*发送状态*/
 			SENDSTATE
 			SENDDATA
+			iDataCliped = 0;
 			while (iTestCase == 7)
 			{
-				for (i = 0; i < CHANNEL; i++)
+				fppImportData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
+				fppExpertData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
+				for (iPoints = 0; iPoints < SAMPLETIMES; iPoints++)
 				{
-					fpData[i] = fDriveSignal;
-				};
-
-				fPhase += PI2*fFreq / SAMPINGRATE;
-				iZeroPass = (fPhase > PI2);
-				fTempPhase = fPhase - PI2;
-				fPhase = iZeroPass ? fTempPhase : fPhase;
-
-				fCycletime = 1 / fFreq;
-
-				fColaSin = sinf(fPhase);
-
-				if (iZeroPass == 1)
-				{
-					iPassTimes++;
-					if (fFreq <= fLowFreq)
-						iCtrCycles = (int)ceilf(fLowTime * fFreq);
-					else if (fFreq <= fHighFreq)
-						iCtrCycles = iMidCycles;
-					else iCtrCycles = (int)ceilf(fHighTime * fFreq);
-					if (iPassTimes >= (iCtrCycles * fCtrRadio))
+					for (i = 0; i < CHANNEL; i++)
 					{
-						iRefresh = 1;
-						iPassTimes = 0;
+						iDataCliped = 0;
+						iDataCliped |= ((abs(fppImportData[iPoints]) >= fpSenserRange[i]) << i);
+						fpData[i] = fppImportData[iPoints] * fpSensitivity[i];;
+					};
+
+					fPhase += PI2*fFreq / SAMPINGRATE;
+					iZeroPass = (fPhase > PI2);
+					fTempPhase = fPhase - PI2;
+					fPhase = iZeroPass ? fTempPhase : fPhase;
+
+					fCycletime = 1 / fFreq;
+
+					fColaSin = sinf(fPhase);
+
+					if (iZeroPass == 1)
+					{
+						iPassTimes++;
+						if (fFreq <= fLowFreq)
+							iCtrCycles = (int)ceilf(fLowTime * fFreq);
+						else if (fFreq <= fHighFreq)
+							iCtrCycles = iMidCycles;
+						else iCtrCycles = (int)ceilf(fHighTime * fFreq);
+						if (iPassTimes >= (iCtrCycles * fCtrRadio))
+						{
+							iRefresh = 1;
+							iPassTimes = 0;
+						}
 					}
-				}
-				else iRefresh = 0;
+					else iRefresh = 0;
 
-				if (iRefresh == 1)
-				{
-					fLevelRate = fLeveldownRate;
-					fLevelOffset = fLeveldownOffset;
-					iLevelChanging = (fDrive > 0.001f);
-					fTempGain = fLevelRate * fCycletime + fLevelOffset;
-					fTempGain = iLevelChanging ? fTempGain : 1;
-
-					
-					printf("f=%f,Drive=%f\n", fFreq, fDrive);
-					/*发送状态*/
-					SENDSTATE
-					/*发送数据*/
-					SENDDATA
-					fDrive *= fTempGain;
-
-					if (iLevelChanging == 0)
+					if (iRefresh == 1)
 					{
-						iTestCase = ((iStopReason == 3) && (iFRFCheck == 1)) ? 5 : iTestCase;
-						iTestCase = ((iStopReason == 3) && (iFRFCheck == 0) && (iRunMode != 1)) ? 6 : iTestCase;
-						iTestCase = ((iStopReason == 4) && (iRunMode != 1)) ? 6 : iTestCase;
-						if ((iCmdCount != SInputCmd.iCmdCount) && (iTestCase == 7))
+						fLevelRate = fLeveldownRate;
+						fLevelOffset = fLeveldownOffset;
+						iLevelChanging = (fDrive > 0.001f);
+						fTempGain = fLevelRate * fCycletime + fLevelOffset;
+						fTempGain = iLevelChanging ? fTempGain : 1;
+
+
+						printf("f=%f,Drive=%f\n", fFreq, fDrive);
+						/*发送状态*/
+						SENDSTATE
+						/*发送数据*/
+						SENDDATA
+						fDrive *= fTempGain;
+						iDataCliped = 0;
+
+						if (iLevelChanging == 0)
+						{
+							iTestCase = ((iStopReason == 3) && (iFRFCheck == 1)) ? 5 : iTestCase;
+							iTestCase = ((iStopReason == 3) && (iFRFCheck == 0) && (iRunMode != 1)) ? 6 : iTestCase;
+							iTestCase = ((iStopReason == 4) && (iRunMode != 1)) ? 6 : iTestCase;
+							if ((iCmdCount != SInputCmd.iCmdCount) && (iTestCase == 7))
 							{
 								GETCMD
 							}
 
+						}
 					}
+
+					fppExpertData[iPoints] = fDrive * fColaSin;
+
 				}
-
-				fDriveSignal = fDrive * fColaSin;
-
 			}
-
 			break;
 		}
 	}

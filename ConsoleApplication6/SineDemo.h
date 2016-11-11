@@ -10,6 +10,8 @@ const int NOISECHECKTIME =(int)(5 * SAMPINGRATE);
 const int TABLELEN = 2048;
 const long long int INF = 10000000000000;
 const float PI2 = 3.1415926f*2;
+const int SAMPLETIMES = 100;
+
 typedef struct ControlPara
 {
 	int iTestMode;
@@ -265,12 +267,12 @@ InputPara SInputPara =
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipProfileType[8];
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },//float fppUnitType[8][3];
 	{ 2, 2, 2, 2, 2, 2, 2, 2 }, //int ipChannelType[CHANNEL];0未激活，1观测，2控制，3限制
-	{ 1, 1, 1, 1 },//int ipChannelCheck[CHANNEL];0禁用，1激活
+	{ 1, 1, 1, 1, 1, 1, 1, 1 },//int ipChannelCheck[CHANNEL];0禁用，1激活
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipRecogMode[CHANNEL];0滤波，1RMS，2峰值
 	{ 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },//float fpWeighting[CHANNEL];
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipSenserType[CHANNEL];0加速度，1EU
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipCouplingType[CHANNEL];
-	{ 100, 100, 100, 100 },//float fpSensitivity[CHANNEL];
+	{ 100, 100, 100, 100, 100, 100, 100, 100 },//float fpSensitivity[CHANNEL];
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },//float fpSenserUnit[CHANNEL];0:mv/g
 	{ 10, 10, 10, 10, 10, 10, 10, 10 },//float fpSenserRange[CHANNEL];V
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipChannelAbort[CHANNEL];
@@ -367,6 +369,8 @@ typedef struct UpdataPara
 	int iChannelAbortResult;
 	int iEffectCh;
 	int iLimitChannelEnable;
+	int iDriveCliped;
+	int iDataCliped;
 }UpdataPara;
 
 typedef struct UpdataData
