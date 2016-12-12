@@ -9,7 +9,8 @@ const int CHANNEL = 8;
 const int NOISECHECKTIME =(int)(5 * SAMPINGRATE);
 const int TABLELEN = 2048;
 const long long int INF = 10000000000000;
-const float PI2 = 3.1415926f*2;
+const float PI2 = 3.1415926f * 2;
+const float PI = 3.1415926f;
 const int SAMPLETIMES = 100;
 
 typedef struct ControlPara
@@ -362,7 +363,7 @@ typedef struct UpdataPara
 	int iNoiseResult;
 	int iLoopResult;
 	int iAlarmorNot;
-	int iAbortorNot;
+	int iAbortorNot; 
 	int iCSLorNot;
 	int iCSLResult;
 	int iChannelAbort;

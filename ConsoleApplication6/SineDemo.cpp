@@ -8,7 +8,6 @@
 				iCmd = SBufCmd.iCmd; \
 				iTestCase = SBufCmd.iTestCase; \
 				iSweepDirect = SBufCmd.iSweepDirect; \
-				fpReferGainGoal[iScheduleAdd] = SBufCmd.fTestlevel;\
 				fTestLevel = SBufCmd.fTestlevel; \
 				fSweepRate = SBufCmd.fSweepRate; \
 				iScheduleAdd = SBufCmd.iScheduleAdd; \
@@ -43,7 +42,7 @@
 					memcpy(SUpdataData.fpRMSResp, fpRecogResp + CHANNEL, sizeof(float)* 8);\
 					memcpy(SUpdataData.fpPeakResp, fpRecogResp + CHANNEL * 2, sizeof(float)* 8);
 
-#define DATAACQU    fppSamples[SAMPLETIMES][CHANNEL]=;
+
 
 int _tmain(int argc, _TCHAR* argv[])
 
@@ -82,6 +81,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int   iSweepDirect;
 	float fPhase;
 	float fTempPhase;
+	float fDeltaPhase;
 	int   iZeroPass;
 	int   iRefresh;
 	int   iCtrCycles;
@@ -189,6 +189,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int   iCSLorNot;
 	int   iCSLResult;
 	int   fCSLLevel;
+	float fCSLSlope = 0;
 
 	/*量级参数*/
 	float fLevelGoal;
@@ -274,7 +275,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			break;
 
 		case 1:                                             
-			
+			iStopReason = 0;
 			/*发送状态*/
 			SENDSTATE
 			SENDDATA
@@ -348,7 +349,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			/*频率、相位、整周期判断参数、Cola信号初始化*/
 			fFreq = 0.2f;
 			fPhase = 0.0f;
-			fTempPhase = 0;
+			fTempPhase = 0.0f;
 			iZeroPass = 0;
 			iRefresh = 0;;
 			iCtrCycles = 0;
@@ -431,7 +432,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			fHighFreq = SInputPara.fHighRadioFreq;
 			fLowTime = SInputPara.fLowRadioTime;
 			fHighTime = SInputPara.fHighRadioTime;
-			iMidCycles = SInputPara.fMidRadioCycles;
+			iMidCycles = SInputPara.fMidRadioCycles * 2;
 			fCtrRadio = 1;
 
 			/*通道识别参数初始化*/
@@ -586,6 +587,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		case 2:												
 			/*发送状态*/
+			iStopReason = 0;
 			SENDSTATE
 			SENDDATA
 			/*等待命令*/
@@ -604,7 +606,10 @@ int _tmain(int argc, _TCHAR* argv[])
 					
 					fppExpertData[iPoints]=fDriveSignal;
 				}
-				GETCMD
+				if (iCmdCount != SBufCmd.iCmdCount)
+				{
+					GETCMD
+				}
 				SENDSTATE
 				SENDDATA
 
@@ -612,7 +617,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			break;
 
 		case 3:
-			/*发送状态*/
+			iStopReason = 0;
 			SENDSTATE
 			SENDDATA
 			fDriveSignal = NOTZERO;
@@ -628,7 +633,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					{
 						iDataCliped = 0;
 						iDataCliped |= ((abs(fppImportData[iPoints]) >= fpSenserRange[i]) << i);
-						fpData[i] = fppImportData[iPoints] * fpSensitivity[i];
+						fpData[i] = fppImportData[iPoints];
 					}
 
 					for (i = 0; i < iCheckChLen; i++)
@@ -638,7 +643,10 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 					fppExpertData[iPoints] = 0;
 				}
-				GETCMD
+				if (iCmdCount != SBufCmd.iCmdCount)
+				{
+					GETCMD
+				}
 				SENDSTATE
 				SENDDATA
 			}
@@ -665,11 +673,13 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		case 4:
 			/*发送状态*/
-			SENDSTATE
-			SENDDATA
+			iStopReason = 0;
 			fDriveSignal = NOTZERO;
 			fDrive = 0.001f;
 			iDataCliped = 0;
+			SENDSTATE
+			SENDDATA
+
 			while (iTestCase == 4)
 			{
 				fppImportData = (fppImportData == fppSampleBuf3) ? fppSampleBuf4 : fppSampleBuf3;
@@ -686,10 +696,14 @@ int _tmain(int argc, _TCHAR* argv[])
 
 					fFreq = fLoopCheckFreq;
 
-					fPhase += PI2*fFreq / SAMPINGRATE;
-					iZeroPass = (fPhase > PI2);
-					fTempPhase = fPhase - PI2;
-					fPhase = iZeroPass ? fTempPhase : fPhase;
+					fDeltaPhase=PI2*fFreq / SAMPINGRATE;
+					fPhase += fDeltaPhase;
+					fPhase = (fPhase > PI2) ? (fPhase - PI2) : fPhase;
+
+					fTempPhase += fDeltaPhase;
+					iZeroPass = (fTempPhase > PI);
+					fTempPhase = iZeroPass ? (fTempPhase - PI) : fTempPhase;
+
 
 					fColaSin = sinf(fPhase);
 					fColaCos = cosf(fPhase);
@@ -763,22 +777,24 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		case 5:
 			/*发送状态*/
+			iStopReason = 0;
+			iTestCase =7;
+			iStopReason = 4;	
 			SENDSTATE
 		    SENDDATA
-			iTestCase =7;
-			iStopReason = 4;
+
 			break;
 
 		case 6:
-			fFreq = 5;
 			fDriveSignal = NOTZERO;
 			fDrive = 0.001f;
 			iAbortCount = 0;
+			fFreq = 5;
 			dTempFreq = fFreq;
-
-			/*发送状态*/
+			iStopReason = 0;
+			printf("case=6\n");
 			SENDSTATE
-		    SENDDATA
+			SENDDATA
 			iDataCliped = 0;
 			while (iTestCase == 6)
 			{
@@ -791,8 +807,8 @@ int _tmain(int argc, _TCHAR* argv[])
 					{
 						
 						iDataCliped |= ((abs(fppImportData[iPoints]) >= fpSenserRange[i]) << i);
-						fpData[i] = fppImportData[iPoints] * fpSensitivity[i];;
-					};
+						fpData[i] = fppImportData[iPoints] * fpSensitivity[i];
+					}
 					fSetRate = (fpScheduleRate[iScheduleAdd] >= 0) ? fSweepRate : -fSweepRate;
 					dFreqRate = ((iRunMode < 2) && (iScheduleAdd > 1) && (iScheduleAdd < iScheTableLen)) ? fSetRate : fpScheduleRate[iScheduleAdd];
 					dFreqRate = (iTestCase == 7) ? 0 : dFreqRate;
@@ -807,13 +823,17 @@ int _tmain(int argc, _TCHAR* argv[])
 					fFreq = dTempFreq;
 					iGetEnd = (iGetEnd1 | iGetEnd2 | iGetEnd3);
 
-					fPhase += PI2*fFreq / SAMPINGRATE;
-					iZeroPass = (fPhase > PI2);
-					fTempPhase = fPhase - PI2;
-					fPhase = iZeroPass ? fTempPhase : fPhase;
+					fDeltaPhase = PI2*fFreq / SAMPINGRATE;
+					fPhase += fDeltaPhase;
+					fPhase = (fPhase > PI2) ? (fPhase - PI2) : fPhase;
+
+					fTempPhase += fDeltaPhase;
+					iZeroPass = (fTempPhase > PI);
+					fTempPhase = iZeroPass ? (fTempPhase - PI) : fTempPhase;
 
 					fColaSin = sinf(fPhase);
 					fColaCos = cosf(fPhase);
+
 					//printf("f=%f,Phase=%f,sinx=%f,drive=%f,data=%f\n", fFreq, fPhase, fColaSin, fDriveSignal,fpData[0]);
 					if (iZeroPass == 1)
 					{
@@ -851,7 +871,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 					if (iRefresh == 1)
 					{
-						fCompLen = SAMPINGRATE * (fPhase) / (PI2*fFreq);
+						fCompLen = (fTempPhase) / (fDeltaPhase);
 						fLen = (float)(llSampleNums - llPreSampleNums);
 						fFourLen = fLen + fPreCompLen - fCompLen;
 						fPreCompLen = fCompLen;
@@ -897,7 +917,7 @@ int _tmain(int argc, _TCHAR* argv[])
 							iChannelAbortResult |= (((fpChannelResp[ipAcquCh[i]] > fpChannellimit[ipAcquCh[i]] * fpChannelRefer[ipAcquCh[i]]) && (ipChannelAbort[i] == 1) & (iScheduleAdd > 0)) << ipAcquCh[i]);
 							/*CSL判断*/
 							fpRespSlope[ipAcquCh[i]] = (fpChannelResp[ipAcquCh[i]] - fpPreChannelResp[ipAcquCh[i]]) / fCycletime;
-							iCSLResult |= (((fpChannelResp[ipAcquCh[i]] < fCSLLevel * fpChannelRefer[ipAcquCh[i]])&&(iScheduleAdd > 0)) << ipAcquCh[i]);
+							iCSLResult |= (((fpRespSlope[ipAcquCh[i]]>fCSLSlope)&&(fpChannelResp[ipAcquCh[i]] < fCSLLevel * fpChannelRefer[ipAcquCh[i]]) && (iScheduleAdd > 0)) << ipAcquCh[i]);
 							fpPreChannelResp[ipAcquCh[i]] = fpChannelResp[ipAcquCh[i]];
 						}
 
@@ -1029,6 +1049,7 @@ int _tmain(int argc, _TCHAR* argv[])
 							iEffectCh = (fFilterDrive[ipCalCh[i]] < fFilterDrive[iEffectCh] ? ipCalCh[i] : iEffectCh);
 						}
 
+						printf("Ff=%f,Ref=%f,Resp=%f,Drive=%f\n", fFreq, fpChannelRefer[CHANNEL], fpChannelResp[CHANNEL], fDrive);
 						/*驱动选择：
 						1、控制驱动与限制驱动中，选择最小驱动作为实际发出驱动
 						2、驱动最大不超过限值
@@ -1039,7 +1060,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						fDrive = (fFilterDrive[iEffectCh] < fMaxDrive) ? fDrive : fMaxDrive;
 						iLimitEnable = (iEffectCh != CHANNEL);
 
-						printf("Ff=%f,Ref=%f,Resp=%f,Drive=%f\n", fFreq, fpChannelRefer[CHANNEL], fpChannelResp[CHANNEL], fDrive);
+						
 
 						if ((iTestCase != 7) && (iCmdCount != SBufCmd.iCmdCount))
 						{
@@ -1054,6 +1075,10 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 
 					fppExpertData[iPoints] = fDrive * fColaSin;
+					if (fFreq > 550)
+					{
+						printf("n=%d,f=%f,Phase=%f,sinx=%f,drive=%f,drivesignal=%f,data=%f\n", iPoints, fFreq, fPhase, fColaSin, fDrive, fppExpertData[iPoints], fpData[0]);
+					}
 
 					iScheduleAdd += iGetEnd;//达到目标，计划表地址+1；未达到，+0
 					iTestCase = (iScheduleAdd == iScheTableLen) ? 7 : iTestCase;
@@ -1081,10 +1106,13 @@ int _tmain(int argc, _TCHAR* argv[])
 						fpData[i] = fppImportData[iPoints] * fpSensitivity[i];;
 					};
 
-					fPhase += PI2*fFreq / SAMPINGRATE;
-					iZeroPass = (fPhase > PI2);
-					fTempPhase = fPhase - PI2;
-					fPhase = iZeroPass ? fTempPhase : fPhase;
+					fDeltaPhase = PI2*fFreq / SAMPINGRATE;
+					fPhase += fDeltaPhase;
+					fPhase = (fPhase > PI2) ? (fPhase - PI2) : fPhase;
+
+					fTempPhase += fDeltaPhase;
+					iZeroPass = (fTempPhase > PI);
+					fTempPhase = iZeroPass ? (fTempPhase - PI) : fTempPhase;
 
 					fCycletime = 1 / fFreq;
 
