@@ -13,303 +13,266 @@ const float PI2 = 3.1415926f * 2;
 const float PI = 3.1415926f;
 const int SAMPLETIMES = 100;
 
-typedef struct ControlPara
+typedef struct SetPara
 {
-	int iTestMode;
-	int iTestSweeps;
-	float fTestTime;
-	int iTestCycles;
-	float fSweepRate;
-	float fSweepTime;
-	float fMaxFreq;
-	float fMinFreq;
-	float fInitialLevel;
-	int iRunMode;
-	int iStartDirect;
-	int iDriveFix;
-	float fpHisUpFRF[2048];
-	float fpHisDownFRF[2048];
-	float fTheoryWeight;
-	int iWeightMode;
-	float fLowRadioFreq;
-	float fHighRadioFreq;
-	float fLowRadioTime;
-	float fHighRadioTime;
-	int fMidRadioCycles;
-}ControlPara;
-ControlPara SControlPara;
+	int   iTestMode;             //试验模式
+	int   iRunMode;              //操作模式
+	int   iTestSweeps;           //试验扫频次数
+	float fTestTime;             //试验总时间
+	int   iTestCycles;           //试验周期数
+	float fMaxFreq;              //频率上限
+	float fMinFreq;              //频率下限
+	float fSweepRate;            //扫描率
+	float fSweepTime;            //单次扫频时间
+	float fDwellFreq;            //驻留频率
+	int   iFDDMode;              //频域保存
+	int   iFDDTimes;             //频域保存频次
+	int   iTPDMode;              //时域保存
+	int   iTPDTimes;             //频域保存频次
 
-typedef struct PretestPara
-{
-	int iPretestType;
-	int iSignalType;
-	float fpPretestTableAmp[100];
-	float fpPretestTableFreq[100];
-	float fNoiseThreshold;
-	float fLoopCheckFreq;
-	float fLoopCheckLevel;
-	float fLoopCheckLimit;
-	float fPretestInitLevel;
-	int iFreqLine;
-	int iAvgTimes;
-	int iStopButtonCheck;
-	int iGainCheck;
-	float fLinerity;
-	int CohCheck;
-	float MinCohLevel;
-}PretestPara;
-PretestPara SPretestPara;
+	float fInitialLevel;         //试验初始量级
+	int   iStartDirect;          //起始方向
+	int   iWeightMode;           //控制加权策略
+	int   iDriveFix;             //驱动修正
+	float fTheoryWeight;         //修正系数
 
-typedef struct ProfilePara
-{
-	float fppTableFreq[8][101];
-	float fppTableAcc[8][101];
-	float fppTableVel[8][101];
-	float fppTableDesp[8][101];
-	float fppTableLeftSlp[8][101];
-	float fppTableRightSlp[8][101];
-	float fppTableLowAlm[8][101];
-	float fppTableHighAlm[8][101];
-	float fppTableLowAbt[8][101];
-	float fppTableHighAbt[8][101];
-	int iProfileType[8];
-	float fpUnitType[8][3];
-}ProfilePara;
-ProfilePara SProfilePara;
+	int   iCompressionMode;      //压缩策略
+	float fLowRadioFreq;         //压缩策略_频率间隔1
+	float fHighRadioFreq;        //压缩策略_频率间隔2
+	float fLowRadioTime;         //压缩策略_低频段更新时间
+	float fHighRadioTime;        //压缩策略_中频段更新周期
+	int   fMidRadioCycles;       //压缩策略_高频段更新时间
 
-typedef struct ChannelPara
-{
-	int ipChannelType[CHANNEL];
-	int ipChannelCheck[CHANNEL];
-	int ipRecogMode[CHANNEL];
-	float fpWeighting[CHANNEL];
-	int ipSenserType[CHANNEL];
-	int ipCouplingType[CHANNEL];
-	float fpSensitivity[CHANNEL];
-	float fpSenserUnit[CHANNEL];
-	float fpSenserRange[CHANNEL];
-	int ipChannelAbort[CHANNEL];
-	float fpChannellimit[CHANNEL];
-	int ipProfileType[CHANNEL];
-}ChannelPara;
-ChannelPara SChannelPara;
+	float fppScheTable[101][9];      //计划表
+	int   iScheTableLen;             //计划表长度
 
-typedef struct SaftyPara
-{
-	float fEqualRate;
-	float fStopRate;
-	float fLevelupRate;
-	float fLeveldownRate;
-	float fMaxDrive;
-	float fSystemGain;
-	int   iAbortLoops;
-	float fCSLLevel;
-	float fMaxShakerInput;
-	float fMaxShakerD;
-	float fMaxShakerV;
-	float fMaxShakerSineA;
-	float fMaxShakerRandA;
-	float fMaxShakerShockA;
-	float fMaxShakerSineF;
-	float fMaxShakerRandF;
-	float fMaxShakerShockF;
-	float fDUT;
-	float fFixture;
-	float fArmature;
-	float fExpander;
-	float fMisc;
-}SaftyPara;
-SaftyPara SSaftyPara;
+	float fppTableFreq[8][101];       //8个谱的频率折点
+	float fppTableAcc[8][101];        //8个谱的加速度折点
+	float fppTableVel[8][101];        //8个谱的速度折点
+	float fppTableDesp[8][101];       //8个谱的位移折点
+	float fppTableLeftSlp[8][101];    //8个谱的左斜率折点
+	float fppTableRightSlp[8][101];   //8个谱的右斜率折点
+	float fppTableLowAlm[8][101];     //8个谱的报警下限折点
+	float fppTableHighAlm[8][101];    //8个谱的报警上限折点
+	float fppTableLowAbt[8][101];     //8个谱的中止下限折点
+	float fppTableHighAbt[8][101];    //8个谱的中止上限折点
+	int   ipProfileType[8];           //8个谱的类型（加速orEu）
+	int   iTableDisPlay;              //谱显示（加速度谱/速度谱/位移谱）
 
-typedef struct SchedulePara
+	int ipChannelType[CHANNEL];       //通道类型
+	int ipChannelCheck[CHANNEL];      //自检
+	int ipRecogMode[CHANNEL];         //识别模式
+	float fpWeighting[CHANNEL];       //权重
+	int ipSenserType[CHANNEL];        //传感器类型
+	int ipCouplingType[CHANNEL];      //耦合方式
+	float fpSensitivity[CHANNEL];     //灵敏度
+	float fpSenserUnit[CHANNEL];      //单位
+	float fpSenserRange[CHANNEL];     //量程
+	int ipChannelAbort[CHANNEL];      //限值中断
+	float fpChannellimit[CHANNEL];    //通道限值
+	int ipReferType[CHANNEL];         //限制谱
+
+	float fMaxShakerInput;      //功放最大输入
+	float fMaxShakerD;          //振动台最大位移
+	float fMaxShakerV;          //振动台最大速度
+	float fMaxShakerSineA;      //振动台最大正弦加速度
+	float fMaxShakerRandA;      //振动台最大随机加速度
+	float fMaxShakerShockA;     //振动台最大冲击加速度
+	float fMaxShakerSineF;      //振动台最大正弦推力
+	float fMaxShakerRandF;      //振动台最大随机推力
+	float fMaxShakerShockF;     //振动台最大冲击推力
+
+	float fLevelupRate;          //量级抬升速率
+	float fLeveldownRate;        //量级下降速率
+
+	float fNoiseThreshold;      //噪声检查阈值
+	float fLoopCheckFreq;       //闭环检查频率
+	float fLoopCheckLevel;      //闭环通过量级
+	float fLoopCheckLimit;      //闭环最大驱动
+
+	float fCSLLevel;            //控制信号丢失
+	float fMaxDrive;            //最大驱动电压
+	int   iAbortLoops;          //中断条件
+}SetPara;
+
+SetPara SSetPara=
 {
-	float fppScheTable[101][6];
-	float fScheTableLen;
-}SchedulePara;
-SchedulePara SSchedulePara;
+	0,//int   iTestMode;             //试验模式
+	2,//int   iRunMode;              //操作模式
+	3,//int   iTestSweeps;           //试验扫频次数
+	300,//float fTestTime;             //试验总时间
+	300,//int   iTestCycles;           //试验周期数
+	2000,//float fMaxFreq;              //频率上限
+	5,//float fMinFreq;              //频率下限
+	4,//float fSweepRate;            //扫描率
+	100,//float fSweepTime;            //单次扫频时间
+	200,//float fDwellFreq;            //驻留频率
+	0,//int   iFDDMode;              //频域保存
+	1,//int   iFDDTimes;             //频域保存频次
+	0,//int   iTPDMode;              //时域保存
+	1,//int   iTPDTimes;             //时域保存频次
+
+	-20,//float fInitialLevel;         //试验初始量级
+	0,//int   iStartDirect;          //起始方向
+	0,//int   iWeightMode;           //控制加权策略
+	0,//int   iDriveFix;             //驱动修正
+	0,//float fTheoryWeight;         //修正系数
+
+	3,//int   iCompressionMode;      //压缩策略
+	50,//float fLowRadioFreq;         //压缩策略_频率间隔1
+	250,//float fHighRadioFreq;        //压缩策略_频率间隔2
+	0.16,//float fLowRadioTime;         //压缩策略_低频段更新时间
+	0.032,//float fHighRadioTime;        //压缩策略_中频段更新周期
+	8,//int   fMidRadioCycles;       //压缩策略_高频段更新时间
+
+	{
+		{ 0, 5, 2000, 4, 0, 2, INF, 2, 2 },
+		{ 1, 5, 5, 3000, -3 },
+		{ 2, 5 },
+		{ 0, 5, 2000, 4, 0, 2, INF, 2, 2 }, 
+		{ 1, 5, 5, 3000, -3 }, 
+		{ 3 }
+	},//float fppScheTable[101][9];      //计划表
+	5, //int   iScheTableLen;             //计划表长度
+
+	{ { 5, 200, 2000 } },//float fppTableFreq[8][101];       //8个谱的频率折点
+	{ { 1, 2, 2 } },//float fppTableAcc[8][101];        //8个谱的加速度折点
+	{ { 5, 200, 2000 } },//float fppTableVel[8][101];        //8个谱的速度折点
+	{ { 5, 200, 2000 } },//float fppTableDesp[8][101];       //8个谱的位移折点
+	{ { 5, 200, 2000 } },//float fppTableLeftSlp[8][101];    //8个谱的左斜率折点
+	{ { 5, 200, 2000 } },//float fppTableRightSlp[8][101];   //8个谱的右斜率折点
+	{ { -3, -3, -3 } },//float fppTableLowAlm[8][101];     //8个谱的报警下限折点
+	{ { 3, 3, 3 } },//float fppTableHighAlm[8][101];    //8个谱的报警上限折点
+	{ { -6, -6, -6 } },//float fppTableLowAbt[8][101];     //8个谱的中止下限折点
+	{ { 6, 6, 6 } },//float fppTableHighAbt[8][101];    //8个谱的中止上限折点
+	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int   ipProfileType[8];           //8个谱的类型（加速orEu）
+	0,//int   iTableDisPlay;              //谱显示（加速度谱/速度谱/位移谱）
+
+	{ 2, 2, 2, 2, 2, 2, 2, 2 }, //int ipChannelType[CHANNEL];       //通道类型
+	{ 1, 1, 1, 1, 1, 1, 1, 1 }, //int ipChannelCheck[CHANNEL];      //自检
+	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipRecogMode[CHANNEL];         //识别模式
+	{ 1, 1, 1, 1, 1, 1, 1, 1 },//float fpWeighting[CHANNEL];       //权重
+	{ 1, 1, 1, 1, 1, 1, 1, 1 },//int ipSenserType[CHANNEL];        //传感器类型
+	{ 1, 1, 1, 1, 1, 1, 1, 1 },//int ipCouplingType[CHANNEL];      //耦合方式
+	{ 100, 100, 100, 100, 100, 100, 100, 100 },//float fpSensitivity[CHANNEL];     //灵敏度
+	{ 1, 1, 1, 1, 1, 1, 1, 1 },//float fpSenserUnit[CHANNEL];      //单位
+	{ 1, 1, 1, 1, 1, 1, 1, 1 },//float fpSenserRange[CHANNEL];     //量程
+	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipChannelAbort[CHANNEL];      //限值中断
+	{ 0, 0, 0, 0, 0, 0, 0, 0 },//float fpChannellimit[CHANNEL];    //通道限值
+	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipReferType[CHANNEL];         //限制谱
+
+	10,//float fMaxShakerInput;      //功放最大输入
+	50,//float fMaxShakerD;          //振动台最大位移
+	50,//float fMaxShakerV;          //振动台最大速度
+	50,//float fMaxShakerSineA;      //振动台最大正弦加速度
+	50,//float fMaxShakerRandA;      //振动台最大随机加速度
+	50,//float fMaxShakerShockA;     //振动台最大冲击加速度
+	50,//float fMaxShakerSineF;      //振动台最大正弦推力
+	50,//float fMaxShakerRandF;      //振动台最大随机推力
+	50,//float fMaxShakerShockF;     //振动台最大冲击推力
+
+	20,//float fLevelupRate;          //量级抬升速率
+	-20,//float fLeveldownRate;        //量级下降速率
+
+	50,//float fNoiseThreshold;      //噪声检查阈值
+	200,//float fLoopCheckFreq;       //闭环检查频率
+	6,//float fLoopCheckLevel;      //闭环通过量级
+	300,//float fLoopCheckLimit;      //闭环最大驱动
+
+	-12,//float fCSLLevel;            //控制信号丢失
+	10,//float fMaxDrive;            //最大驱动电压
+	1,//int   iAbortLoops;          //中断条件
+};
 
 typedef struct InputPara
 {
-	int iTestMode;
-	int iTestSweeps;
-	float fTestTime;
-	int iTestCycles;
-	float fSweepRate;
-	float fSweepTime;
-	float fMaxFreq;
-	float fMinFreq;
-	float fInitialLevel;
-	int iRunMode;
-	int iStartDirect;
-	int iDriveFix;
-	float fpHisUpFRF[2048];
-	float fpHisDownFRF[2048];
-	float fTheoryWeight;
-	int iWeightMode;
-	float fLowRadioFreq;
-	float fHighRadioFreq;
-	float fLowRadioTime;
-	float fHighRadioTime;
-	int fMidRadioCycles;
-	int iPretestType;
-	int iSignalType;
-	float fpPretestTableAmp[100];
-	float fpPretestTableFreq[100];
-	float fNoiseThreshold;
-	float fLoopCheckFreq;
-	float fLoopCheckLevel;
-	float fLoopCheckLimit;
-	float fPretestInitLevel;
-	int iFreqLine;
-	int iAvgTimes;
-	int iStopButtonCheck;
-	int iGainCheck;
-	float fLinerity;
-	int CohCheck;
-	float MinCohLevel;
-	float fppTableFreq[8][101];
-	float fppTableAcc[8][101];
-	float fppTableVel[8][101];
-	float fppTableDesp[8][101];
-	float fppTableLeftSlp[8][101];
-	float fppTableRightSlp[8][101];
-	float fppTableLowAlm[8][101];
-	float fppTableHighAlm[8][101];
-	float fppTableLowAbt[8][101];
-	float fppTableHighAbt[8][101];
-	int ipProfileType[8];
-	float fppUnitType[8];
-	int ipChannelType[CHANNEL];
-	int ipChannelCheck[CHANNEL];
-	int ipRecogMode[CHANNEL];
-	float fpWeighting[CHANNEL];
-	int ipSenserType[CHANNEL];
-	int ipCouplingType[CHANNEL];
-	float fpSensitivity[CHANNEL];
-	float fpSenserUnit[CHANNEL];
-	float fpSenserRange[CHANNEL];
-	int ipChannelAbort[CHANNEL];
-	float fpChannellimit[CHANNEL];
-	int ipReferType[CHANNEL];
-	float fEqualRate;
-	float fStopRate;
-	float fLevelupRate;
-	float fLeveldownRate;
-	float fMaxDrive;
-	float fSystemGain;
-	int   iAbortLoops;
-	float fCSLLevel;
-	float fMaxShakerInput;
-	float fMaxShakerD;
-	float fMaxShakerV;
-	float fMaxShakerSineA;
-	float fMaxShakerRandA;
-	float fMaxShakerShockA;
-	float fMaxShakerSineF;
-	float fMaxShakerRandF;
-	float fMaxShakerShockF;
-	float fDUT;
-	float fFixture;
-	float fArmature;
-	float fExpander;
-	float fMisc;
-	float fppScheTable[101][6];
-	int   iScheTableLen;
+	float fSamplingRate;          //采样率
+	float fSamplingTime;         //采样间隔
+
+	int   iTestMode;             //试验模式
+	int   iRunMode;              //操作模式
+	int   iTestSweeps;           //试验扫频次数
+	float fTestTime;             //试验总时间
+	int   iTestCycles;           //试验周期数
+	float fMaxFreq;              //频率上限
+	float fMinFreq;              //频率下限
+	float fSweepRate;            //扫描率
+	float fSweepTime;            //单次扫频时间
+	float fDwellFreq;            //驻留频率
+	int   iFDDMode;              //频域保存
+	int   iFDDTimes;             //频域保存频次
+	int   iTPDMode;              //时域保存
+	int   iTPDTimes;             //频域保存频次
+
+	float fInitialLevel;         //试验初始量级
+	int   iStartDirect;          //起始方向
+	int   iWeightMode;           //控制加权策略
+	int   iDriveFix;             //驱动修正
+	float fTheoryWeight;         //修正系数
+
+	int   iCompressionMode;      //压缩策略
+	float fLowRadioFreq;         //压缩策略_频率间隔1
+	float fHighRadioFreq;        //压缩策略_频率间隔2
+	float fLowRadioTime;         //压缩策略_低频段更新时间
+	float fHighRadioTime;        //压缩策略_中频段更新周期
+	int   fMidRadioCycles;       //压缩策略_高频段更新时间
+
+	float fppScheTable[101][8];      //计划表
+	int   iScheTableLen;             //计划表长度
+
+	float fppTableFreq[8][101];       //8个谱的频率折点
+	float fppTableAcc[8][101];        //8个谱的加速度折点
+	float fppTableVel[8][101];        //8个谱的速度折点
+	float fppTableDesp[8][101];       //8个谱的位移折点
+	float fppTableLeftSlp[8][101];    //8个谱的左斜率折点
+	float fppTableRightSlp[8][101];   //8个谱的右斜率折点
+	float fppTableLowAlm[8][101];     //8个谱的报警下限折点
+	float fppTableHighAlm[8][101];    //8个谱的报警上限折点
+	float fppTableLowAbt[8][101];     //8个谱的中止下限折点
+	float fppTableHighAbt[8][101];    //8个谱的中止上限折点
+	int   ipProfileType[8];           //8个谱的类型（加速orEu）
+	int   iTableDisPlay;              //谱显示（加速度谱/速度谱/位移谱）
+
+	int ipChannelType[CHANNEL];       //通道类型
+	int ipChannelCheck[CHANNEL];      //自检
+	int ipRecogMode[CHANNEL];         //识别模式
+	float fpWeighting[CHANNEL];       //权重
+	int ipSenserType[CHANNEL];        //传感器类型
+	int ipCouplingType[CHANNEL];      //耦合方式
+	float fpSensitivity[CHANNEL];     //灵敏度
+	float fpSenserUnit[CHANNEL];      //单位
+	float fpSenserRange[CHANNEL];     //量程
+	int ipChannelAbort[CHANNEL];      //限值中断
+	float fpChannellimit[CHANNEL];    //通道限值
+	int ipReferType[CHANNEL];         //限制谱
+
+	float fMaxShakerInput;      //功放最大输入
+	float fMaxShakerD;          //振动台最大位移
+	float fMaxShakerV;          //振动台最大速度
+	float fMaxShakerSineA;      //振动台最大正弦加速度
+	float fMaxShakerRandA;      //振动台最大随机加速度
+	float fMaxShakerShockA;     //振动台最大冲击加速度
+	float fMaxShakerSineF;      //振动台最大正弦推力
+	float fMaxShakerRandF;      //振动台最大随机推力
+	float fMaxShakerShockF;     //振动台最大冲击推力
+
+	float fLevelupRate;          //量级抬升速率
+	float fLeveldownRate;        //量级下降速率
+	float fLevelupOffset;        //量级抬升偏置
+	float fLeveldownOffset;      //量级下降偏置
+
+	float fNoiseThreshold;      //噪声检查阈值
+	float fLoopCheckFreq;       //闭环检查频率
+	float fLoopCheckLevel;      //闭环通过量级
+	float fLoopCheckLimit;      //闭环最大驱动
+
+	float fCSLLevel;            //控制信号丢失
+	float fMaxDrive;            //最大驱动电压
+	int   iAbortLoops;          //中断条件
+
 }InputPara;
-InputPara SInputPara = 
-{
-	0,//int iTestMode;
-	5,//int iTestSweeps;
-	60.f,//float fTestTime;
-	200,//int iTestCycles;
-	4.0f,//float fSweepRate;
-	20.f,//float fSweepTime;
-	2000.f,//float fMaxFreq;
-	5.f,//float fMinFreq;
-	0.03f,//float fInitialLevel;
-	0,//int iRunMode;
-	0,//int iStartDirect;
-	0,//int iDriveFix;
-	{ 0 },//float fpHisUpFRF[2048];
-	{0},//float fpHisDownFRF[2048];
-	0.5,// fTheoryWeight;
-	0,//int iWeightMode;
-	50,//float fLowRadioFreq;
-	250,//float fHighRadioFreq;
-	0.16,//float fLowRadioTime;
-	0.032,//float fHighRadioTime;
-	8,//int fMidRadioCycles;
-	0,//int iPretestType;
-	0,//int iSignalType;
-	{ 0 },//float fpPretestTableAmp[100];
-	{ 0 },//float fpPretestTableFreq[100];
-	0.05,//float fNoiseThreshold;
-	5,//float fLoopCheckFreq;
-	3,//float fLoopCheckLevel;
-	0.1,//float fLoopCheckLimit;
-	0.03,//float fPretestInitLevel;
-	2048,//int iFreqLine;
-	10,//int iAvgTimes;
-	0,//int iStopButtonCheck;
-	0,//int iGainCheck;
-	0.f,//float fLinerity;
-	0,//int CohCheck;
-	0.0f,//float MinCohLevel;
-	{ { 5.0f, 20.0f, 2000.0f } }, //float fppTableFreq[8][101];
-	{ { 1.0f, 2.0f, 2.0f } }, //float fppTableAcc[8][101];
-	{ { 0.0f, 0.0f, 0.0f } }, //float fppTableVel[8][101];
-	{ { 0.0f, 0.0f, 0.0f } },//float fppTableDesp[8][101];
-	{ { 0.0f, 0.0f, 0.0f } },//float fppTableLeftSlp[8][101];
-	{ { 0.0f, 0.0f, 0.0f } },//float fppTableRightSlp[8][101];
-	{ { 0.707f, 0.707f, 0.707f } },//float fppTableLowAlm[8][101];
-	{ { 1.414f, 1.414f, 1.414f } },//float fppTableHighAlm[8][101];
-	{ { 0.5f, 0.5f, 0.5f } },//float fppTableLowAbt[8][101];
-	{ { 2.0f, 2.0f, 2.0f } }, //float fppTableHighAbt[8][101];
-	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipProfileType[8];
-	{ 0, 0, 0, 0, 0, 0, 0, 0 },//float fppUnitType[8][3];
-	{ 2, 2, 2, 2, 2, 2, 2, 2 }, //int ipChannelType[CHANNEL];0未激活，1观测，2控制，3限制
-	{ 1, 1, 1, 1, 1, 1, 1, 1 },//int ipChannelCheck[CHANNEL];0禁用，1激活
-	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipRecogMode[CHANNEL];0滤波，1RMS，2峰值
-	{ 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },//float fpWeighting[CHANNEL];
-	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipSenserType[CHANNEL];0加速度，1EU
-	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipCouplingType[CHANNEL];
-	{ 100, 100, 100, 100, 100, 100, 100, 100 },//float fpSensitivity[CHANNEL];
-	{ 0, 0, 0, 0, 0, 0, 0, 0 },//float fpSenserUnit[CHANNEL];0:mv/g
-	{ 10, 10, 10, 10, 10, 10, 10, 10 },//float fpSenserRange[CHANNEL];V
-	{ 0, 0, 0, 0, 0, 0, 0, 0 },//int ipChannelAbort[CHANNEL];
-	{ 0, 0, 0, 0, 0, 0, 0, 0 },//float fpChannellimit[CHANNEL];
-	{ 0, 0, 0, 0, 0, 0, 0, 0 },// int ipReferType[CHANNEL];
-	30.0f,//float fEqualRate;
-	-30.0f,//float fStopRate;
-	30.0f,//float fLevelupRate;
-	-30.0f,//float fLeveldownRate;
-	10.0f,//float fMaxDrive;
-	0.03f,//float fSystemGain;
-	1,//int iAbortLimilt
-	0.25f,//float fCSLLevel;
-	10.0f,//float fMaxShakerInput;
-	50.0f,//float fMaxShakerD;
-	50.0f,//float fMaxShakerV;
-	100.0f,//float fMaxShakerSineA;
-	100.0f,//float fMaxShakerRandA;
-	100.0f,// float fMaxShakerShockA;
-	100.0f,// float fMaxShakerSineF;
-	100.0f,//float fMaxShakerRandF;
-	100.0f,// float fMaxShakerShockF;
-	100.0f,// float fDUT;
-	100.0f,// float fFixture;
-	100.0f,// float fArmature;
-	100.0f,//float fExpander;
-	100.0f,//float fMisc;
-	{						//float fppScheTable[101][6];
-		{ 5, 2000, 4, INF, 1, 0 },
-		{ 2000, 5, 4, INF, 1, 0 },
-		{ 5, 2000, 4, INF, 1, 0 },
-		{ 2000, 5, 4, INF, 1, 0 },
-		{ 5, 2000, 4, INF, 1, 0 }
-	},
-	5//int iScheTableLen;
-};
+
+InputPara SInputPara;
 
 typedef struct InputCmd
 {
@@ -387,10 +350,22 @@ typedef struct UpdataData
 
 }UpdataData;
 
-void LevelRate(float *fRate, float *fOffset, float RealRate, float LowT, float HighT);
-void InterpPoints(float *ifX, float *ifY, float *ifx, float *ify, int iXLenth, int ixLenth);
-float OcttoRate(float Oct);
-float Interp(float x1, float y1, float x2, float y2, float x);
+
+float dBtoLevel(float dB);  //dB转实际值
+
+float LevetodB(float Level); //实际值转dB
+
+void LevelRate(float *fRate, float *fOffset, float RealRate, float LowT, float HighT);  //等效量级速度计算
+
+void InterpPoints(float *fpX, float *fpY, float *fpx, float *fpy, int iXLenth, int ixLenth); //多点插值函数
+
+float OcttoRate(float Oct, float fSamplingtime);//扫描率转频率实际速度
+
+float RatetoOct(float Rate, float fSamplingRate);//频率实际速度转扫描率
+
+float Interp(float x1, float y1, float x2, float y2, float x);//单点插值函数
+
+void SettoInput(InputPara *SInputPara, SetPara *SSetPara);//设置参数—下发参数转换函数
 
 UpdataPara SUpdataPara;
 UpdataData SUpdataData;

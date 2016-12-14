@@ -56,15 +56,15 @@ int _tmain(int argc, _TCHAR* argv[])
 	int iTestCase = 1;
 	int iCmd = 0;
 	int iStopReason;
-	int iCmdCount=0;
+	int iCmdCount = 0;
 
 	/*时域参数*/
 	float fppSampleBuf1[SAMPLETIMES][CHANNEL];
 	float fppSampleBuf2[SAMPLETIMES][CHANNEL];
-	float fppSampleBuf3[SAMPLETIMES] = {0};
-	float fppSampleBuf4[SAMPLETIMES] = {0};
-	float *fppImportData=NULL;
-	float *fppExpertData=NULL;
+	float fppSampleBuf3[SAMPLETIMES] = { 0 };
+	float fppSampleBuf4[SAMPLETIMES] = { 0 };
+	float *fppImportData = NULL;
+	float *fppExpertData = NULL;
 	float fpData[CHANNEL];
 	float fDriveSignal;
 	long long int llPreSampleNums;
@@ -73,23 +73,21 @@ int _tmain(int argc, _TCHAR* argv[])
 	int iDataCliped = 0;
 
 	/*频率相位参数*/
-	float fFreq;
+	float  fFreq;
 	double dTempFreq;
 	double dFreqRate;
-	float fSweepRate;
-	float fSetRate;
-	int   iSweepDirect;
-	float fPhase;
-	float fTempPhase;
-	float fDeltaPhase;
-	int   iZeroPass;
-	int   iRefresh;
-	int   iCtrCycles;
-	int   iPassTimes;
-	float fColaSin;
-	float fColaCos;	
-
-	
+	float  fSweepRate;
+	float  fSetRate;
+	int    iSweepDirect;
+	float  fPhase;
+	float  fTempPhase;
+	float  fDeltaPhase;
+	int    iZeroPass;
+	int    iRefresh;
+	int    iCtrCycles;
+	int    iPassTimes;
+	float  fColaSin;
+	float  fColaCos;
 
 	/*多通道计算参数*/
 	int ipCheckCh[CHANNEL];
@@ -104,24 +102,26 @@ int _tmain(int argc, _TCHAR* argv[])
 	/*预试验参数*/
 	float fpNoiseLevel[CHANNEL];
 	float fMaxNoise;
-	int iNoiseResult;
-	int iLoopResult;
+	int   iNoiseResult;
+	int   iLoopResult;
 	float fLoopCheckFreq;
 	float fLoopCheckLevel;
 	float fLoopCheckLimit;
-	int iFRFCheck;
-	int ipChannelCheck[CHANNEL];
-		
+	int   iFRFCheck;
+	int   ipChannelCheck[CHANNEL];
+
 	/*计划表参数*/
 	int   iScheduleAdd;
 	float fpScheduleRate[100];
 	float fpFreqGoal1[100];
 	float fpFreqGoal2[100];
 	long long int llpTimeGoal[100];
-    long long int llpDwellTime[100];
+	long long int llpDwellTime[100];
 	float fpReferGainGoal[100];
 	int   iAddMove[100];
+	int   iSweepLoops[100];
 	int   iScheTableLen;
+	int   iGetEndCount;
 	int   iGetEnd;
 	int   iGetEnd1;
 	int   iGetEnd2;
@@ -132,7 +132,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fHighFreq;
 	float fLowTime;
 	float fHighTime;
-	int iMidCycles;
+	int   iMidCycles;
 	float fCtrRadio;
 
 	/*傅里叶滤波参数*/
@@ -161,19 +161,19 @@ int _tmain(int argc, _TCHAR* argv[])
 	/*RMS参数*/
 	float fSumX[CHANNEL];
 	float fSumX2[CHANNEL];
-	
+
 	/*峰值法参数*/
 	float fpMaxX[CHANNEL];
 	float fpMinX[CHANNEL];
 
 	/*识别结果*/
-	float fpChannelResp[CHANNEL+1];
+	float fpChannelResp[CHANNEL + 1];
 	float fpFourPhase[CHANNEL];
-	float fpRecogResp[CHANNEL*3];
+	float fpRecogResp[CHANNEL * 3];
 	int	  ipRecongMode[CHANNEL];
 	float fpPreChannelResp[CHANNEL];
 	float fpRespSlope[CHANNEL];
-	
+
 	/*多通道加权参数*/
 	float fpWeightResp[3] = { 0, 0, 10000 };
 	int   iWeightMode;
@@ -182,8 +182,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fpSenserRange[CHANNEL];
 
 	/*通道峰值判断，闭环判断参数*/
-	int   ipChannelAbort[CHANNEL+1];
-	float fpChannellimit[CHANNEL+1];
+	int   ipChannelAbort[CHANNEL + 1];
+	float fpChannellimit[CHANNEL + 1];
 	int   iChannelAbortResult;
 	int   iChannelAbort;
 	int   iCSLorNot;
@@ -195,7 +195,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fLevelGoal;
 	float fTestLevel;
 	float iRunMode;
-	float fReferGain=0;
+	float fReferGain = 0;
 	float fLevelupRate;
 	float fLeveldownRate;
 	float fLevelupOffset;
@@ -207,7 +207,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fCycletime;
 	float fInitialLevel;
 	float fMaxSystemGain = 0;
-	
+
 	/*参考谱参数*/
 	float fppReferFreq[CHANNEL][TABLELEN];
 	float fppReferAmp[CHANNEL][TABLELEN];
@@ -216,10 +216,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fpChannelRefer[CHANNEL + 1];
 
 	/*报警限中止限参数*/
-	int iAlarmorNot;
-	int iAbortOnce;
-	int iAbortorNot;
-	int iAbortCount;
+	int   iAlarmorNot;
+	int   iAbortOnce;
+	int   iAbortorNot;
+	int   iAbortCount;
 	int   iAbortLoops;
 	float fpUpAlarm[TABLELEN];
 	float fpDownAlarm[TABLELEN];
@@ -234,7 +234,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int   iLimitEnable;
 	float fDrive;
 	float fMaxDrive;
-	int iDriveCliped = 0;
+	int   iDriveCliped = 0;
 
 	/*历史频响修正参数*/
 	float fInvFreqResp;
@@ -243,16 +243,20 @@ int _tmain(int argc, _TCHAR* argv[])
 	float fDeltaFreq;
 	float fpUpIFRF[TABLELEN];
 	float fpDownIFRF[TABLELEN];
-	int   iIFRFMark=1;
-	float fPreFreq=0;
+	int   iIFRFMark = 1;
+	float fPreFreq = 0;
 	float fPrePreFreq;
-
 	float fTheoryIFRF;
 	float fTheoryDrive;
 	float fTheoryWeight;
 	float fTheorySetWeight;
 	float fHighIFRF;
 	float fLowIFRF;
+	
+	//调试////
+	SettoInput(&SInputPara, &SSetPara);
+	iTestCase = 1;
+	////////
 
 	while (iExit == 0)
 	{
@@ -276,10 +280,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		case 1:                                             
 			iStopReason = 0;
-			/*发送状态*/
-			SENDSTATE
-			SENDDATA
-			/*采集数据清零*/
 			for (i = 0; i < CHANNEL; i++)
 			{
 				fpData[i] = 0.0f;
@@ -288,7 +288,6 @@ int _tmain(int argc, _TCHAR* argv[])
 			llSampleNums = 0;
 			fppImportData = fppSampleBuf3;
 			fppExpertData = fppSampleBuf4;
-
 
 			/*采集通道统计，控制通道统计，限制通道统计*/
 			iAcquChLen = 0;
@@ -328,15 +327,15 @@ int _tmain(int argc, _TCHAR* argv[])
 			{
 				fpNoiseLevel[i] = 0.0f;
 			}
+
 			/*预试验参数初始化*/
 			fMaxNoise = SInputPara.fNoiseThreshold;
 			iNoiseResult = 0;
 			iLoopResult = 0;
 			fLoopCheckFreq = SInputPara.fLoopCheckFreq;
-			fLoopCheckLevel = powf(10, (SInputPara.fLoopCheckLevel / 20.0f));
+			fLoopCheckLevel = SInputPara.fLoopCheckLevel;
 			fLoopCheckLimit = SInputPara.fLoopCheckLimit;
-			iFRFCheck = 1;
-			
+			iFRFCheck = 0;
 
 			/*试验初始设置初始化*/
 			iRunMode = SInputPara.iRunMode;
@@ -344,10 +343,10 @@ int _tmain(int argc, _TCHAR* argv[])
 			dFreqRate = 0;
 			iSweepDirect = 1;
 			fMaxDrive = SInputPara.fMaxDrive * 1000;
-			 
+
 
 			/*频率、相位、整周期判断参数、Cola信号初始化*/
-			fFreq = 0.2f;
+			fFreq = SInputPara.fLoopCheckFreq;
 			fPhase = 0.0f;
 			fTempPhase = 0.0f;
 			iZeroPass = 0;
@@ -356,7 +355,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			iPassTimes = 0;
 			fColaSin = 0.0f;
 			fColaCos = 1.0f;
-			fSweepRate = OcttoRate(SInputPara.fSweepRate);
+			fSweepRate = SInputPara.fSweepRate;
 
 
 			/*驱动驱动信号初始化*/
@@ -364,74 +363,31 @@ int _tmain(int argc, _TCHAR* argv[])
 			fDriveSignal = 0.0f;
 
 			/*计划表初始化*/
+
+			for (i = 0; i < SInputPara.iScheTableLen + 1; i++)
+			{
+				fpFreqGoal1[i] = SInputPara.fppScheTable[i][0];
+				fpFreqGoal2[i] = SInputPara.fppScheTable[i][1];
+				fpScheduleRate[i] = SInputPara.fppScheTable[i][2];
+				llpTimeGoal[i] = SInputPara.fppScheTable[i][3];
+				fpReferGainGoal[i] = SInputPara.fppScheTable[i][4];
+				iAddMove[i] = SInputPara.fppScheTable[i][5];
+				llpDwellTime[i] = SInputPara.fppScheTable[i][6];
+				iSweepLoops[i] = SInputPara.fppScheTable[i][7];
+			}
+			iGetEndCount = 0;
+			iGetEnd = 0;
+			iGetEnd1 = 0;
+			iGetEnd2 = 0;
+			iGetEnd3 = 0;
+			iScheTableLen = SInputPara.iScheTableLen;
 			iScheduleAdd = 0;
-			if (SInputPara.iRunMode > 1)
-			{
-				for (i = 0; i < SInputPara.iScheTableLen; i++)
-				{
-					fpFreqGoal1[i+2] = (SInputPara.fppScheTable[i][0] < SInputPara.fppScheTable[i][1]) ? SInputPara.fppScheTable[i][0] : SInputPara.fppScheTable[i][1];
-					fpFreqGoal2[i+2] = (SInputPara.fppScheTable[i][0] > SInputPara.fppScheTable[i][1]) ? SInputPara.fppScheTable[i][0] : SInputPara.fppScheTable[i][1];
-					fpScheduleRate[i+2] = OcttoRate(SInputPara.fppScheTable[i][2]);
-					fpScheduleRate[i+2] = (SInputPara.fppScheTable[i][0] < SInputPara.fppScheTable[i][1]) ? fpScheduleRate[i] : (-fpScheduleRate[i]);
-					llpTimeGoal[i+2] = SInputPara.fppScheTable[i][3] * SAMPINGRATE;
-					fpReferGainGoal[i+2] = SInputPara.fppScheTable[i][4];
-					iAddMove[i+2] = 0;
-					llpDwellTime[i+2] = 0;
-				}
-				iGetEnd = 0;
-				iGetEnd1 = 0;
-				iGetEnd2 = 0;
-				iGetEnd3 = 0;
-				iScheTableLen = SInputPara.iScheTableLen + 2;
-			}
-			else
-			{
-				for (i = 0; i < SInputPara.iTestSweeps; i++)
-				{
-					fpFreqGoal1[i + 2] = SInputPara.fMinFreq;
-					fpFreqGoal2[i + 2] = SInputPara.fMaxFreq;
-					fpScheduleRate[i + 2] = OcttoRate(SInputPara.fSweepRate);
-					fpScheduleRate[i + 2] = ((SInputPara.iStartDirect == 0) ^ ((i % 2) == 1)) ? fpScheduleRate[i + 2] : (-fpScheduleRate[i + 2]);
-					llpTimeGoal[i + 2] = (SInputPara.fSweepRate == 0) ? SInputPara.fTestTime * SAMPINGRATE : INF;
-					fpReferGainGoal[i + 2] = 1;
-					iAddMove[i + 2] = 0;
-					llpDwellTime[i + 2] = 0;
-				}
-					iGetEnd = 0;
-					iGetEnd1 = 0;
-					iGetEnd2 = 0;
-					iGetEnd3 = 0;
-					iScheTableLen = SInputPara.iTestSweeps + 2;
-			}
-			/*试验均衡量级实现*/
-			fpFreqGoal1[0] = 0.5f * fpFreqGoal1[3];
-			fpFreqGoal2[0] = 1.5f * fpFreqGoal1[3];
-			fpScheduleRate[0] = 0.0f;
-			llpTimeGoal[0] = INF;
-			fpReferGainGoal[0] = 0.03;
-			iAddMove[0] = 1;
-			llpDwellTime[0] = 0;
-			/*试验初始量级实现*/
-			fpFreqGoal1[1] = 0.5f * fpFreqGoal1[3];
-			fpFreqGoal2[1] = 1.5f * fpFreqGoal1[3];
-			fpScheduleRate[1] = 0.0f;
-			llpTimeGoal[1] = INF;
-			fpReferGainGoal[1] = SInputPara.fInitialLevel;
-			iAddMove[1] = (SInputPara.iRunMode != 1);
-			llpDwellTime[1] = 0;
-			/*试验结束等待实现*/
-			fpFreqGoal1[iScheTableLen] = 0.5f *fpFreqGoal2[iScheTableLen - 1];
-			fpFreqGoal2[iScheTableLen] = 1.5f * fpFreqGoal2[iScheTableLen - 1];
-			fpScheduleRate[iScheTableLen] = 0.0f;
-			llpTimeGoal[iScheTableLen] = INF;
-			fpReferGainGoal[iScheTableLen] = SInputPara.fInitialLevel;
-			iAddMove[iScheTableLen] = 0;
-			llpDwellTime[iScheTableLen] = 0;
+
 			/*压缩策略初始化*/
 			fLowFreq = SInputPara.fLowRadioFreq;
 			fHighFreq = SInputPara.fHighRadioFreq;
-			fLowTime = SInputPara.fLowRadioTime;
-			fHighTime = SInputPara.fHighRadioTime;
+			fLowTime = SInputPara.fLowRadioTime * 2;
+			fHighTime = SInputPara.fHighRadioTime * 2;
 			iMidCycles = SInputPara.fMidRadioCycles * 2;
 			fCtrRadio = 1;
 
@@ -489,7 +445,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			{
 				fpChannelWeight[i] = SInputPara.fpWeighting[i];
 				fWeightSum += fpChannelWeight[i];
-				fpSensitivity[i] = 1/SInputPara.fpSensitivity[i];
+				fpSensitivity[i] = 1 / SInputPara.fpSensitivity[i];
 				fpSenserRange[i] = SInputPara.fpSenserRange[i] * 10000;
 			}
 			for (i = 0; i < CHANNEL; i++)
@@ -498,8 +454,10 @@ int _tmain(int argc, _TCHAR* argv[])
 			}
 
 			/*量级变化参数初始化*/
-			LevelRate(&fLevelupRate, &fLevelupOffset, SInputPara.fLevelupRate, SInputPara.fLowRadioTime, SInputPara.fHighRadioTime);
-			LevelRate(&fLeveldownRate, &fLeveldownOffset, SInputPara.fLeveldownRate, SInputPara.fLowRadioTime, SInputPara.fHighRadioTime);
+			fLevelupRate = SInputPara.fLevelupRate;
+			fLevelupOffset = SInputPara.fLevelupOffset;
+			fLeveldownRate = SInputPara.fLeveldownRate;
+			fLeveldownOffset = SInputPara.fLeveldownOffset;
 			fLevelRate = 1;
 			fLevelOffset = 0;
 			iLevelChanging = 0;
@@ -518,7 +476,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			iChannelAbortResult = 0;
 			iCSLorNot = 0;
 			iCSLResult = 0;
-			
+
 			/*谱长度谱谱类型统计*/
 			float ipxLenth[CHANNEL];
 			for (i = 0; i < CHANNEL; i++)
@@ -535,7 +493,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			ipReferType[CHANNEL] = 0;
 
 			/*参考谱限制谱插值*/
-			for (i = 0; i < iCalLen+1; i++)
+			for (i = 0; i < iCalLen + 1; i++)
 			{
 				InterpPoints(fppReferFreq[ipReferType[i]], fppReferAmp[ipReferType[i]], SInputPara.fppTableFreq[ipReferType[i]], SInputPara.fppTableAcc[ipReferType[i]], TABLELEN, ipxLenth[ipReferType[i]]);
 			}
@@ -577,7 +535,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			/*理论驱动权重*/
 			fTheorySetWeight = SInputPara.fTheoryWeight;
-			
 			/*初始化完毕跳转至case2*/
 			//iTestCase = 2;
 			/*初始化完毕跳转至case6*/
@@ -811,6 +768,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 					fSetRate = (fpScheduleRate[iScheduleAdd] >= 0) ? fSweepRate : -fSweepRate;
 					dFreqRate = ((iRunMode < 2) && (iScheduleAdd > 1) && (iScheduleAdd < iScheTableLen)) ? fSetRate : fpScheduleRate[iScheduleAdd];
+					dFreqRate = ((iGetEndCount & 1) == 0) ? dFreqRate : -dFreqRate;
 					dFreqRate = (iTestCase == 7) ? 0 : dFreqRate;
 					dFreqRate *= iSweepDirect;
 					dTempFreq += (dFreqRate * dTempFreq);											//频率累乘的结果
@@ -821,7 +779,9 @@ int _tmain(int argc, _TCHAR* argv[])
 					dTempFreq = iGetEnd1 ? fpFreqGoal1[iScheduleAdd] : dTempFreq;					//达到目标1，频率=目标；未达到，频率=累乘结果
 					dTempFreq = iGetEnd2 ? fpFreqGoal2[iScheduleAdd] : dTempFreq;					//达到目标2，频率=目标；未达到，频率=累乘结果
 					fFreq = dTempFreq;
-					iGetEnd = (iGetEnd1 | iGetEnd2 | iGetEnd3);
+					iGetEndCount += (iGetEnd1 | iGetEnd2 | iGetEnd3);
+					iGetEnd = (iGetEndCount >= iSweepLoops[iScheduleAdd]);
+					iGetEndCount = (iGetEndCount >= iSweepLoops[iScheduleAdd]) ? 0 : iGetEndCount;
 
 					fDeltaPhase = PI2*fFreq / SAMPINGRATE;
 					fPhase += fDeltaPhase;
@@ -1075,10 +1035,10 @@ int _tmain(int argc, _TCHAR* argv[])
 					}
 
 					fppExpertData[iPoints] = fDrive * fColaSin;
-					if (fFreq > 550)
-					{
-						printf("n=%d,f=%f,Phase=%f,sinx=%f,drive=%f,drivesignal=%f,data=%f\n", iPoints, fFreq, fPhase, fColaSin, fDrive, fppExpertData[iPoints], fpData[0]);
-					}
+					//if (fFreq > 550)
+					//{
+					//	printf("n=%d,f=%f,Phase=%f,sinx=%f,drive=%f,drivesignal=%f,data=%f\n", iPoints, fFreq, fPhase, fColaSin, fDrive, fppExpertData[iPoints], fpData[0]);
+					//}
 
 					iScheduleAdd += iGetEnd;//达到目标，计划表地址+1；未达到，+0
 					iTestCase = (iScheduleAdd == iScheTableLen) ? 7 : iTestCase;
@@ -1174,7 +1134,22 @@ int _tmain(int argc, _TCHAR* argv[])
 	return 0;
 }
 
-void LevelRate(float *fRate, float *fOffset,float RealRate, float LowT, float HighT)
+float dBtoLevel(float dB)
+{
+	float Level;
+	Level = pow(10.0, ((double)dB / 20.0));
+	return(Level);
+}
+
+float LevetodB(float Level)
+{
+	float dB;
+	dB = log10(Level) / 20.0;
+	return(Level);
+}
+
+
+void LevelRate(float *fRate, float *fOffset, float RealRate, float LowT, float HighT)
 {
 	float LowRate;
 	float HighRate;
@@ -1189,12 +1164,12 @@ void InterpPoints(float *fpX, float *fpY, float *fpx, float *fpy, int iXLenth, i
 	int i;
 	float fdx;
 	int ixAdd;
-	
-	fdx = powf(2,(log2f(fpx[ixLenth] / fpx[0])) / (iXLenth - 3));
+
+	fdx = powf(2, (log2f(fpx[ixLenth] / fpx[0])) / (iXLenth - 3));
 	fpX[0] = 0.5f * fpx[0];
 	fpY[0] = fpy[0];
-	fpX[iXLenth-1] = 1.1f * fpx[ixLenth];
-	fpY[iXLenth-1] = fpy[ixLenth];
+	fpX[iXLenth - 1] = 1.1f * fpx[ixLenth];
+	fpY[iXLenth - 1] = fpy[ixLenth];
 	fpX[1] = fpx[0];
 	fpY[1] = fpy[0];
 	ixAdd = 1;
@@ -1211,15 +1186,26 @@ void InterpPoints(float *fpX, float *fpY, float *fpx, float *fpy, int iXLenth, i
 	}
 }
 
-float OcttoRate(float Oct)
+float OcttoRate(float Oct, float fSamplingtime)
 {
 	float Rate;
 	double deltaOct;
 	deltaOct = Oct;
 	deltaOct /= 60;
-	deltaOct *= SAMPINGTIME;
+	deltaOct *= fSamplingtime;
 	Rate = pow(2.0, deltaOct) - 1;
 	return(Rate);
+}
+
+float RatetoOct(float Rate, float fSamplingRate)
+{
+	float Oct;
+	double deltaRate;
+	deltaRate = Rate + 1;
+	deltaRate = log2(deltaRate);
+	deltaRate *= fSamplingRate;
+	Oct = deltaRate * 60;
+	return(Oct);
 }
 
 
@@ -1228,4 +1214,213 @@ float Interp(float x1, float y1, float x2, float y2, float x)
 	float y;
 	y = (x - x2)*(y1 - y2) / (x1 - x2) + y2;
 	return y;
+}
+
+void SettoInput(InputPara *SInputPara, SetPara *SSetPara)
+{
+	int i;
+	int j;
+	int k;
+	int m;
+	float fppTempScheTable[101][9];
+	int iTempTableLen;
+
+	SInputPara->fSamplingRate = 200000;       //采样率
+	SInputPara->fSamplingTime = 1 / SInputPara->fSamplingRate;       //采样间隔
+	SInputPara->iTestMode = SSetPara->iTestMode;             //试验模式
+	SInputPara->iRunMode = SSetPara->iRunMode;              //操作模式
+	SInputPara->iTestSweeps = SSetPara->iTestSweeps;           //试验扫频次数
+	SInputPara->fTestTime = SSetPara->fTestTime;             //试验总时间
+	SInputPara->iTestCycles = SSetPara->iTestCycles;           //试验周期数
+	SInputPara->fMaxFreq = SSetPara->fMaxFreq;              //频率上限
+	SInputPara->fMinFreq = SSetPara->fMinFreq;              //频率下限
+	SInputPara->fSweepRate = OcttoRate(SSetPara->fSweepRate, SInputPara->fSamplingTime);            //扫描率
+	SInputPara->fSweepTime = SSetPara->fSweepTime;            //单次扫频时间
+	SInputPara->iFDDMode = SSetPara->iFDDMode;              //频域保存
+	SInputPara->iFDDTimes = SSetPara->iFDDTimes;             //频域保存频次
+	SInputPara->iTPDMode = SSetPara->iTPDMode;              //时域保存
+	SInputPara->iTPDTimes = SSetPara->iTPDTimes;           //频域保存频次
+
+	SInputPara->fInitialLevel = dBtoLevel(SSetPara->fInitialLevel);         //试验初始量级
+	SInputPara->iStartDirect = SSetPara->iStartDirect;           //起始方向
+	SInputPara->iWeightMode = SSetPara->iWeightMode;             //控制加权策略
+	SInputPara->iDriveFix = SSetPara->iDriveFix;                 //驱动修正
+	SInputPara->fTheoryWeight = SSetPara->fTheoryWeight;         //修正系数
+
+	SInputPara->fLowRadioFreq = SSetPara->fLowRadioFreq;        //压缩策略_频率间隔1
+	SInputPara->fHighRadioFreq = SSetPara->fHighRadioFreq;      //压缩策略_频率间隔2
+	SInputPara->fLowRadioTime = SSetPara->fLowRadioTime;        //压缩策略_低频段更新时间
+	SInputPara->fHighRadioTime = SSetPara->fHighRadioTime;      //压缩策略_中频段更新周期
+	SInputPara->fMidRadioCycles = SSetPara->fMidRadioCycles;    //压缩策略_高频段更新时间
+
+	iTempTableLen = 0;
+	if (SSetPara->iRunMode > 1)
+	{
+		for (i = 0; i < SSetPara->iScheTableLen; i++)
+		{
+			if (SSetPara->fppScheTable[i][0] != 2)
+			{
+				for (j = 0; j < 9; j++)
+				{
+					fppTempScheTable[iTempTableLen][j] = SSetPara->fppScheTable[i][j];
+				}
+				iTempTableLen++;
+			}
+			else if (SSetPara->fppScheTable[i][0] == 2)
+			{
+				for (k = 0; k < SSetPara->fppScheTable[i][1]; k++)
+				{
+					m = 0;
+					while (SSetPara->fppScheTable[i + m + 1][0] != 3)
+					{
+						for (j = 0; j < 9; j++)
+						{
+							fppTempScheTable[iTempTableLen][j] = SSetPara->fppScheTable[i + m + 1][j];
+						}
+						iTempTableLen++;
+						m++;
+					}
+				}
+				while (SSetPara->fppScheTable[i][0] != 3)
+				{
+					i++;
+				}
+				i++;
+			}
+		}
+		for (i = 0; i < iTempTableLen; i++)
+		{
+
+			switch ((int)fppTempScheTable[i][0])
+			{
+			case 0:
+				SInputPara->fppScheTable[i + 2][0] = (fppTempScheTable[i][1] < fppTempScheTable[i][2]) ? fppTempScheTable[i][1] : fppTempScheTable[i][2];
+				SInputPara->fppScheTable[i + 2][1] = (fppTempScheTable[i][1] > fppTempScheTable[i][2]) ? fppTempScheTable[i][1] : fppTempScheTable[i][2];
+				SInputPara->fppScheTable[i + 2][2] = OcttoRate(fppTempScheTable[i][3], SInputPara->fSamplingTime);
+				SInputPara->fppScheTable[i + 2][2] = (fppTempScheTable[i][1] < fppTempScheTable[i][2]) ? SInputPara->fppScheTable[i + 2][2] : (-SInputPara->fppScheTable[i + 2][2]);
+				SInputPara->fppScheTable[i + 2][3] = INF;
+				SInputPara->fppScheTable[i + 2][4] = dBtoLevel(fppTempScheTable[i][4]);
+				SInputPara->fppScheTable[i + 2][5] = 0;
+				SInputPara->fppScheTable[i + 2][6] = 0;
+				SInputPara->fppScheTable[i + 2][7] = fppTempScheTable[i][5];
+				break;
+
+			case 1:
+				SInputPara->fppScheTable[i + 2][0] = fppTempScheTable[i][1] * 0.5;
+				SInputPara->fppScheTable[i + 2][1] = fppTempScheTable[i][1] * 1.5;
+				SInputPara->fppScheTable[i + 2][2] = 0;
+				SInputPara->fppScheTable[i + 2][3] = fppTempScheTable[i][2] * SInputPara->fSamplingRate;
+				SInputPara->fppScheTable[i + 2][4] = dBtoLevel(fppTempScheTable[i][4]);
+				SInputPara->fppScheTable[i + 2][5] = 0;
+				SInputPara->fppScheTable[i + 2][6] = 0;
+				SInputPara->fppScheTable[i + 2][7] = 1;
+				break;
+			}
+		}
+		SInputPara->iScheTableLen = iTempTableLen + 2;
+	}
+	else
+	{
+		if (SSetPara->iTestMode == 2)
+		{
+			SInputPara->fppScheTable[2][0] = SSetPara->fMinFreq;
+			SInputPara->fppScheTable[2][1] = SSetPara->fMaxFreq;
+			SInputPara->fppScheTable[2][2] = 0;
+			SInputPara->fppScheTable[2][3] = SSetPara->fTestTime * SInputPara->fSamplingRate;
+			SInputPara->fppScheTable[2][4] = (SSetPara->iRunMode == 1) ? SInputPara->fInitialLevel : 1;
+			SInputPara->fppScheTable[2][5] = 0;
+			SInputPara->fppScheTable[2][6] = 0;
+			SInputPara->fppScheTable[2][7] = 1;
+			SInputPara->iScheTableLen = 3;
+
+		}
+		else
+		{
+			for (i = 0; i < SSetPara->iTestSweeps; i++)
+			{
+				SInputPara->fppScheTable[i + 2][0] = SSetPara->fMinFreq;
+				SInputPara->fppScheTable[i + 2][1] = SSetPara->fMaxFreq;
+				SInputPara->fppScheTable[i + 2][2] = OcttoRate(SSetPara->fSweepRate, SInputPara->fSamplingTime);
+				SInputPara->fppScheTable[i + 2][2] = ((SSetPara->iStartDirect == 0) ^ ((i % 2) == 1)) ? SInputPara->fppScheTable[i + 2][2] : (-SInputPara->fppScheTable[i + 2][2]);
+				SInputPara->fppScheTable[i + 2][3] = INF;
+				SInputPara->fppScheTable[i + 2][4] = (SSetPara->iRunMode == 1) ? SInputPara->fInitialLevel : 1;
+				SInputPara->fppScheTable[i + 2][5] = 0;
+				SInputPara->fppScheTable[i + 2][6] = 0;
+				SInputPara->fppScheTable[i + 2][7] = 1;
+
+			}
+			SInputPara->iScheTableLen = SSetPara->iTestSweeps + 2;
+		}
+	}
+
+	/*试验均衡量级实现*/
+	SInputPara->fppScheTable[0][0] = 0.5f *SInputPara->fppScheTable[2][0];
+	SInputPara->fppScheTable[0][1] = 1.5f *SInputPara->fppScheTable[2][0];
+	SInputPara->fppScheTable[0][2] = 0.0f;
+	SInputPara->fppScheTable[0][3] = SInputPara->fSamplingRate;;
+	SInputPara->fppScheTable[0][4] = 0.03;
+	SInputPara->fppScheTable[0][5] = 0;
+	SInputPara->fppScheTable[0][6] = 0;
+	SInputPara->fppScheTable[0][7] = 1;
+	/*试验初始量级实现*/
+	SInputPara->fppScheTable[1][0] = 0.5f *SInputPara->fppScheTable[2][0];
+	SInputPara->fppScheTable[1][1] = 1.5f *SInputPara->fppScheTable[2][0];
+	SInputPara->fppScheTable[1][2] = 0.0f;
+	SInputPara->fppScheTable[1][3] = INF;
+	SInputPara->fppScheTable[1][4] = dBtoLevel(SSetPara->fInitialLevel);
+	SInputPara->fppScheTable[1][5] = (SSetPara->iRunMode != 1);
+	SInputPara->fppScheTable[1][6] = 0;
+	SInputPara->fppScheTable[1][7] = 1;
+	/*试验结束等待实现*/
+	SInputPara->fppScheTable[SInputPara->iScheTableLen][0] = 0.5f *SInputPara->fppScheTable[SInputPara->iScheTableLen - 1][1];
+	SInputPara->fppScheTable[SInputPara->iScheTableLen][1] = 1.5f *SInputPara->fppScheTable[SInputPara->iScheTableLen - 1][1];
+	SInputPara->fppScheTable[SInputPara->iScheTableLen][2] = 0.0f;
+	SInputPara->fppScheTable[SInputPara->iScheTableLen][3] = INF;
+	SInputPara->fppScheTable[SInputPara->iScheTableLen][4] = dBtoLevel(SSetPara->fInitialLevel);
+	SInputPara->fppScheTable[SInputPara->iScheTableLen][5] = 0;
+	SInputPara->fppScheTable[SInputPara->iScheTableLen][6] = 0;
+	SInputPara->fppScheTable[SInputPara->iScheTableLen][7] = 1;
+
+	for (i = 0; i < 8; i++)
+	{
+		for (j = 0; j < 101; j++)
+		{
+			SInputPara->fppTableFreq[i][j] = SSetPara->fppTableFreq[i][j];       //8个谱的频率折点
+			SInputPara->fppTableAcc[i][j] = SSetPara->fppTableAcc[i][j];        //8个谱的加速度折点
+			SInputPara->fppTableVel[i][j] = SSetPara->fppTableVel[i][j];        //8个谱的速度折点
+			SInputPara->fppTableDesp[i][j] = SSetPara->fppTableDesp[i][j];       //8个谱的位移折点
+			SInputPara->fppTableLeftSlp[i][j] = SSetPara->fppTableLeftSlp[i][j];    //8个谱的左斜率折点
+			SInputPara->fppTableRightSlp[i][j] = SSetPara->fppTableRightSlp[i][j];   //8个谱的右斜率折点
+			SInputPara->fppTableLowAlm[i][j] = dBtoLevel(SSetPara->fppTableLowAlm[i][j]);     //8个谱的报警下限折点
+			SInputPara->fppTableHighAlm[i][j] = dBtoLevel(SSetPara->fppTableHighAlm[i][j]);    //8个谱的报警上限折点
+			SInputPara->fppTableLowAbt[i][j] = dBtoLevel(SSetPara->fppTableLowAbt[i][j]);     //8个谱的中止下限折点
+			SInputPara->fppTableHighAbt[i][j] = dBtoLevel(SSetPara->fppTableHighAbt[i][j]);    //8个谱的中止上限折点
+			SInputPara->ipProfileType[i] = SSetPara->ipProfileType[i];           //8个谱的类型（加速orEu）
+		}
+
+		SInputPara->ipChannelType[i] = SSetPara->ipChannelType[i];     //通道类型
+		SInputPara->ipChannelCheck[i] = SSetPara->ipChannelCheck[i];    //自检
+		SInputPara->ipRecogMode[i] = SSetPara->ipRecogMode[i];       //识别模式
+		SInputPara->fpWeighting[i] = SSetPara->fpWeighting[i];       //权重
+		SInputPara->ipSenserType[i] = SSetPara->ipSenserType[i];      //传感器类型
+		SInputPara->ipCouplingType[i] = SSetPara->ipCouplingType[i];    //耦合方式
+		SInputPara->fpSensitivity[i] = SSetPara->fpSensitivity[i];     //灵敏度
+		SInputPara->fpSenserUnit[i] = SSetPara->fpSenserUnit[i];      //单位
+		SInputPara->fpSenserRange[i] = SSetPara->fpSenserRange[i];     //量程
+		SInputPara->ipChannelAbort[i] = SSetPara->ipChannelAbort[i];    //限值中断
+		SInputPara->fpChannellimit[i] = dBtoLevel(SSetPara->fpChannellimit[i]);    //通道限值
+		SInputPara->ipReferType[i] = (SSetPara->ipChannelType[i] == 3) ? SSetPara->ipReferType[i] : 0;       //限制谱
+	}
+
+	LevelRate(&(SInputPara->fLevelupRate), &(SInputPara->fLevelupOffset), SSetPara->fLevelupRate, SSetPara->fLowRadioTime, SSetPara->fHighRadioTime);//量级抬升速率
+	LevelRate(&(SInputPara->fLeveldownRate), &(SInputPara->fLeveldownOffset), SSetPara->fLeveldownRate, SSetPara->fLowRadioTime, SSetPara->fHighRadioTime);//量级下降速率
+
+	SInputPara->fNoiseThreshold = SSetPara->fNoiseThreshold;      //噪声检查阈值
+	SInputPara->fLoopCheckFreq = SSetPara->fLoopCheckFreq;       //闭环检查频率
+	SInputPara->fLoopCheckLevel = dBtoLevel(SSetPara->fLoopCheckLevel);      //闭环通过量级
+	SInputPara->fLoopCheckLimit = SSetPara->fLoopCheckLimit;      //闭环最大驱动
+
+	SInputPara->fCSLLevel = dBtoLevel(SSetPara->fCSLLevel);            //控制信号丢失
+	SInputPara->fMaxDrive = SSetPara->fMaxDrive;            //最大驱动电压
+	SInputPara->iAbortLoops = SSetPara->iAbortLoops;          //中断条件
 }
